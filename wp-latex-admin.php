@@ -49,8 +49,10 @@ function wp_latex_admin_update( $new ) {
 
 	$comments = intval($new['comments'] != 0);
 
-	if ( isset($new['force_math_mode']) )
-		$force_math_mode = intval($new['force_math_mode'] != 1);
+//	if ( isset($new['force_math_mode']) )
+//		$force_math_mode = intval($new['force_math_mode'] != 1);
+
+	$force_math_mode = 1;
 
 	if ( isset($new['css']) ) :
 		$css = str_replace(array("\n", "\r"), "\n", $new['css']);
@@ -77,15 +79,12 @@ function wp_latex_admin_update( $new ) {
 			$dvipng_path = $new['dvipng_path'];
 	endif;
 
-	if ( isset($new['exit_code']) )
-		$exit_code = (int) $new['exit_code'];
-
-	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'force_math_mode', 'wrapper', 'exit_code' );
+	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'force_math_mode', 'wrapper' );
 	update_option( 'wp_latex', $wp_latex );
 	return $errors;
 }
 
-function wp_latex_test_image( $new_exit_code = null ) {
+function wp_latex_test_image() {
 	if ( !is_writable(ABSPATH . 'wp-content/latex') )
 		return false;
 
@@ -97,10 +96,6 @@ function wp_latex_test_image( $new_exit_code = null ) {
 	$automattic_latex->init( ABSPATH . 'wp-content/latex/test', '\displaystyle P_\nu^{-\mu}(z)=\frac{\left(z^2-1\right)^{\frac{\mu}{2}}}{2^\mu \sqrt{\pi}\Gamma\left(\mu+\frac{1}{2}\right)}\int_{-1}^1\frac{\left(1-t^2\right)^{\mu -\frac{1}{2}}}{\left(z+t\sqrt{z^2-1}\right)^{\mu-\nu}}dt', $bg, $fg, 3 );
 	if ( isset($wrapper) )
 		$automattic_latex->wrapper( $wrapper );
-	if ( isset($exit_code) )
-		$automattic_latex->latex_exit_code = (int) $exit_code;
-	if ( !is_null($new_exit_code) )
-		$automattic_latex->latex_exit_code = (int) $new_exit_code;
 
 	$message = '';
 	@unlink(ABSPATH . 'wp-content/latex/test.png');
@@ -112,10 +107,6 @@ function wp_latex_test_image( $new_exit_code = null ) {
 		if ( false !== strpos($code, '_exec') ) :
 			$exec = $image->get_error_data( $code );
 			exec( $exec, $out, $r );
-			if ( 'latex_exec' == $code && $r != $automattic_latex->latex_exit_code && wp_latex_test_image( (int) $r ) ) // If failed on latex, try changing the exit code
-				return true; // changing the exit code worked.  We have a real image.
-			elseif ( !is_null($new_exit_code) ) // In case we changed the exit code and still have a dvipng error
-				return false;
 			$message = "<h4>Command run:</h4>\n";
 			$message .= "<pre><code>$exec</code></pre>\n";
 			$out = str_replace( 'test.log', '<strong><a href="' . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.log' ) . '">test.log</a></strong>', join("\n", $out));
@@ -129,10 +120,6 @@ function wp_latex_test_image( $new_exit_code = null ) {
 	elseif ( !file_exists($image) ) :
 		return false;
 	else :
-		if ( !is_null($new_exit_code) && (int) $new_exit_code != (int) $exit_code ) {
-			$wp_latex['exit_code'] = (int) $new_exit_code;
-			wp_latex_admin_update( $wp_latex );
-		}
 		echo "<img src='" . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.png') . "' alt='Test Image' title='If you can see a big integral, all is well.' style='display: block; margin: 0 auto;' />\n";
 		$automattic_latex->unlink_tmp_files();
 		return true;
@@ -259,12 +246,11 @@ function wp_latex_activate() {
 
 	$latex_path = '/usr/bin/latex';
 	$dvipng_path = '/usr/bin/dvipng';
-	$exit_code = 0;
 
 	$wrapper = false;
 	$force_math_mode = 1;
 
-	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'wrapper', 'force_math_mode', 'exit_code' );
+	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'wrapper', 'force_math_mode' );
 	update_option( 'wp_latex', $wp_latex );
 }
 

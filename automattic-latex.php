@@ -69,7 +69,6 @@ class Automattic_Latex {
 
 	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\pagestyle{empty}";
 	var $force = true;
-	var $latex_exit_code = 0;
 
 	function new_latex( $file_base, $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
 		$object = new Automattic_Latex();
@@ -173,7 +172,7 @@ class Automattic_Latex {
 		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->file_base.dvi -o $this->file_base.png -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight";
 		putenv("TEXMFOUTPUT=$dir");
 		exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
-		if ( $this->latex_exit_code != $l )
+		if ( 0 != $l )
 			$r = new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
 		else
 			exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
