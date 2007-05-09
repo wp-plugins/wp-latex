@@ -1,5 +1,6 @@
 <?php
 /*
+Version: 0.7
 Inspired in part by:
 	Steve Mayer ( http://www.mayer.dial.pipex.com/tex.htm ): LatexRender WP Plugin ( http://sixthform.info/steve/wordpress/index.php )
 	Benjamin Zeiss ( zeiss@math.uni-goettingen.de ): LaTeX Rendering Class
@@ -62,35 +63,19 @@ class Automattic_Latex {
 
 	var $file_base;
 	var $latex;
-	var $bg_hex;
-	var $fg_hex;
 	var $bg_rgb;
 	var $fg_rgb;
 	var $size;
 
-	function create_png( $file_base, $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
+	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\pagestyle{empty}";
+	var $force = true;
+	var $latex_exit_code = 0;
+
+	function new_latex( $file_base, $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
 		$object = new Automattic_Latex();
 
 		$object->init( $file_base, $latex, $bg_hex, $fg_hex, $size );
-		return $object->save_png();
-	}
-
-	function display_png( $image ) {
-		if ( @get_resource_type( $image ) ); // [sic]
-		elseif ( is_wp_error($image) )
-			$image = Automattic_Latex::render_error( $image );
-		elseif ( !file_exists($image) )
-			$image = Automattic_Latex::render_error( __( 'Error Loading Image', 'automattic-latex' ) );
-		else
-			$image = imagecreatefrompng( $image );
-
-		header("Content-Type: image/png");
-		header("Vary: Accept-Encoding"); // Handle proxies
-		header("Expires: " . gmdate("D, d M Y H:i:s", time() + 864000) . " GMT"); // 10 days
-
-		imagepng($image);
-		imagedestroy($image);
-		exit;
+		return $object;
 	}
 
 	function init( $file_base, $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
@@ -154,21 +139,21 @@ class Automattic_Latex {
 		endswitch;
 	}
 
-	function save_png() {
+	function create_png( $debug = false ) {
 		if ( !$this->latex )
-			return new WP_Error( 'automattic-latex', __( 'No formula provided', 'automattic-latex' ) );
+			return new WP_Error( 'blank', __( 'No formula provided', 'automattic-latex' ) );
 
 		foreach ( $this->_blacklist as $bad )
 			if ( stristr($this->latex, $bad) )
-				return new WP_Error( 'automattic-latex', __( 'Formula Invalid', 'automattic-latex' ) );
+				return new WP_Error( 'blacklist', __( 'Formula Invalid', 'automattic-latex' ) );
 
-		if ( preg_match('/(^|[^\\\\])\$/', $this->latex) )
-			return new WP_Error( 'automattic-latex', __( 'You must stay in inline math mode', 'automattic-latex' ) );
+		if ( $this->force && preg_match('/(^|[^\\\\])\$/', $this->latex) )
+			return new WP_Error( 'mathmode', __( 'You must stay in inline math mode', 'automattic-latex' ) );
 
 		if ( 2000 < strlen($latex) )
-			return new WP_Error( 'automattic-latex', __( 'The formula is too long', 'automattic-latex' ) );
+			return new WP_Error( 'length', __( 'The formula is too long', 'automattic-latex' ) );
 
-		$latex = $this->wrap( $this->latex );
+		$latex = $this->wrap();
 
 		$umask = umask(0);
 			$dir = dirname($this->file_base);
@@ -176,26 +161,81 @@ class Automattic_Latex {
 				mkdir($dir, fileperms(dirname($dir)) % 010000 );
 
 			if ( !$f = @fopen( "$this->file_base.tex", 'w' ) )
-				return new WP_Error( 'automattic-latex', __( 'Could not open TEX file for writing', 'automattic-latex' ) );
+				return new WP_Error( 'fopen', __( 'Could not open TEX file for writing', 'automattic-latex' ) );
 			if ( false === @fwrite($f, $latex) )
-				return new WP_Error( 'automattic-latex', __( 'Could not write to TEX file', 'automattic-latex' ) );
+				return new WP_Error( 'fwrite', __( 'Could not write to TEX file', 'automattic-latex' ) );
 			fclose($f);
 		umask($umask);
 
-		exec( "TEXMFOUTPUT=$dir;export TEXMFOUTPUT; cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . " --interaction nonstopmode $this->file_base.tex > /dev/null 2>&1", $out, $r );
-		if ( 0 != $r )
-			return new WP_Error( 'automattic-latex', __( 'Formula does not parse', 'automattic-latex' ) );
-		exec( AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->file_base.dvi -o $this->file_base.png -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight > /dev/null 2>&1" );
+		$r = false;
+		$d = 0;
+		$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . " --halt-on-error --interaction nonstopmode $this->file_base.tex";
+		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->file_base.dvi -o $this->file_base.png -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight";
+		putenv("TEXMFOUTPUT=$dir");
+		exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
+		if ( $this->latex_exit_code != $l )
+			$r = new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
+		else
+			exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
+		if ( !$r && 0 != $d )
+			$r = new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
 
-		unlink( "$this->file_base.tex" );
-		unlink( "$this->file_base.aux" );
-		unlink( "$this->file_base.log" );
-		unlink( "$this->file_base.dvi" );
+		if ( !$debug )
+			$this->unlink_tmp_files();
 
-		return "$this->file_base.png";
+		return $r ? $r : "$this->file_base.png";
 	}
 
+	function unlink_tmp_files() {
+		@unlink( "$this->file_base.tex" );
+		@unlink( "$this->file_base.aux" );
+		@unlink( "$this->file_base.log" );
+		@unlink( "$this->file_base.dvi" );
+	}
         
+	function force_math_mode( $force = null ) {
+		if ( !is_null($force) )
+			$this->force = (bool) $force;
+		return $this->force;
+	}
+
+	function wrapper( $wrapper = false ) {
+		if ( is_string($wrapper) )
+			$this->wrapper = $wrapper;
+		return $this->wrapper;
+	}
+
+	function wrap() {
+		$string  = $this->wrapper();
+		$string .= "\n\begin{document}\n";
+		if ( $this->size ) $string .= "\begin{{$this->size}}\n";
+		if ( $this->force_math_mode() )
+			$string .= $this->latex == '\LaTeX' || $this->latex == '\TeX' ? $this->latex : '$' . $this->latex . '$';
+		else
+			$string .= $this->latex;
+		if ( $this->size ) $string .= "\n\end{{$this->size}}";
+		$string .= "\n\end{document}";
+		return $string;
+	}
+
+	function display_png( $image ) {
+		if ( @get_resource_type( $image ) ); // [sic]
+		elseif ( is_wp_error($image) )
+			$image = Automattic_Latex::render_error( $image );
+		elseif ( !file_exists($image) )
+			$image = Automattic_Latex::render_error( __( 'Error Loading Image', 'automattic-latex' ) );
+		else
+			$image = imagecreatefrompng( $image );
+
+		header("Content-Type: image/png");
+		header("Vary: Accept-Encoding"); // Handle proxies
+		header("Expires: " . gmdate("D, d M Y H:i:s", time() + 864000) . " GMT"); // 10 days
+
+		imagepng($image);
+		imagedestroy($image);
+		exit;
+	}
+
 	function render_error( $error ) {
 		if ( is_wp_error($error) )
 			$error = $error->get_error_message();
@@ -209,24 +249,6 @@ class Automattic_Latex {
 		imagestring($image, 3, 4, 2, $error, $red);
 
 		return $image;
-	}
-
-	function wrap( $latex ) {
-		$string  = "\documentclass[12pt]{article}\n";
-		$string .= "\usepackage[latin1]{inputenc}\n";
-//		$string .= "\usepackage{textcomp}\n";
-//		$string .= "\usepackage[T1]{fontenc}\n";
-		$string .= "\usepackage{amsmath}\n";
-		$string .= "\usepackage{amsfonts}\n";
-		$string .= "\usepackage{amssymb}\n";
-		$string .= "\usepackage[mathscr]{eucal}\n";
-		$string .= "\pagestyle{empty}\n";
-		$string .= "\begin{document}\n";
-		if ( $this->size ) $string .= "\begin{{$this->size}}\n";
-		$string .= $latex == '\LaTeX' || $latex == '\TeX' ? $latex : "\$" . $latex . "\$";
-		if ( $this->size ) $string .= "\end{{$this->size}}\n";
-		$string .= "\n\end{document}\n";
-		return $string;
 	}
 
 }
