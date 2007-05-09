@@ -1,7 +1,7 @@
 === WP LaTeX ===
 Contributors: mdawaffe
 Tags: latex, math, equations
-Stable tag: trunk
+Stable tag: 0.6
 Requires at least: 2.1
 Tested up to: 2.2
 
