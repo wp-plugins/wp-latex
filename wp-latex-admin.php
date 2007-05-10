@@ -4,7 +4,11 @@ function wp_latex_admin_menu() {
 	$hook = add_submenu_page( 'plugins.php', 'WP LaTeX', 'WP LaTeX', 'manage_options', __FILE__, 'wp_latex_admin_page' );
 	add_action( "load-$hook", 'wp_latex_admin_post' );
 	if ( !is_writable(ABSPATH . 'wp-content/latex') )
-		add_action( 'admin_notices', create_function('$a', 'echo "<div class=\'error fade\'><p><code>wp-content/latex/</code> must be writeable for WP LaTeX to work.</p></div>";') );
+		add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-chmod\' class=\'error fade\'><p><code>wp-content/latex/</code> must be writeable for WP LaTeX to work.</p></div>";') );
+	if ( !function_exists('wp_add_faux_ml') )
+		add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-fauxml\' class=\'error fade\'><p><a href=\'http://wordpress.org/extend/plugins/fauxml/\'>FauxML</a> must be installed and activated for WP LaTeX to work.</p></div>";') );
+	if ( isset($_GET['latex_message']) )
+		add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-config\' class=\'updated fade\'><p>Make sure to check the <a href=\'plugins.php?page=' . urlencode(plugin_basename(__FILE__)) . '\'>WP LaTeX Options</a>.</p></div>";') );
 }
 
 function wp_latex_admin_post() {
@@ -150,14 +154,14 @@ function wp_latex_admin_page() {
 	foreach ( $errors as $e )
 		$$e = $wp_latex_errors->get_error_data( $e );
 ?>
-<div id='message' class='error fade'>
+<div id='latex-config-errors' class='error fade'>
 <p>
 
 <?php	foreach ( $wp_latex_errors->get_error_messages() as $m ) echo "$m<br />\n"; ?>
 </p>
 </div>
 <?php	elseif ( isset($_GET['updated']) ) : ?>
-<div id='message' class='updated fade'>
+<div id='latex-config-success' class='updated fade'>
 <p>WP LaTeX options updated.</p>
 </div>
 <?php	endif; ?>
@@ -165,7 +169,7 @@ function wp_latex_admin_page() {
 <div class='wrap'>
 <h2>WP LaTeX Options</h2>
 
-<?php wp_latex_test_image(); ?>
+<?php if ( empty($errors) ) wp_latex_test_image(); ?>
 
 <form action="<?php echo $action; ?>" method="post">
 
@@ -176,7 +180,8 @@ function wp_latex_admin_page() {
 		<th scope="row"<?php if ( in_array('latex_path', $errors) ) echo ' class="error"'; ?>><code>latex</code> path</th>
 		<td><input type='text' name='wp_latex[latex_path]' value='<?php echo attribute_escape( $latex_path ); ?>' id='wp-latex-path' /><?php
 			if ( !$wp_latex['latex_path'] ) {
-				if ( $guess_latex_path = exec('which latex') )
+				$guess_latex_path = trim(@exec('which latex'));
+				if ( file_exists($guess_latex_path) )
 					echo " Try: <code>$guess_latex_path</code>";
 				else
 					echo " Not found.  Enter full path to <code>latex</code>";
@@ -187,7 +192,8 @@ function wp_latex_admin_page() {
 		<th scope="row"<?php if ( in_array('dvipng_path', $errors) ) echo ' class="error"'; ?>><code>dvipng</code> path</th>
 		<td><input type='text' name='wp_latex[dvipng_path]' value='<?php echo attribute_escape( $dvipng_path ); ?>' id='wp-dvipng-path' /><?php
 			if ( !$wp_latex['dvipng_path'] ) {
-				if ( $guess_dvipng_path = exec('which dvipng') )
+				$guess_dvipng_path = trim(@exec('which dvipng'));
+				if ( file_exists($guess_dvipng_path) )
 					echo " Try: <code>$guess_dvipng_path</code>";
 				else
 					echo " Not found.  Enter full path to <code>dvipng</code>";
@@ -248,29 +254,46 @@ function wp_latex_admin_page() {
 }
 
 function wp_latex_activate() {
-	delete_option( 'wp_latex' );
 	$wp_latex = get_option( 'wp_latex' );
 	if ( is_array($wp_latex) )
-		return;
+		extract($wp_latex);
 
 	global $themecolors;
-	$bg = isset($themecolors['bg']) ? $themecolors['bg'] : 'ffffff';
-	$fg = isset($themecolors['text']) ? $themecolors['text'] : '000000';
 
-	$comments = 0;
+	if ( !isset($bg) )
+		$bg = isset($themecolors['bg']) ? $themecolors['bg'] : 'ffffff';
+	if ( !isset($fg) )
+		$fg = isset($themecolors['text']) ? $themecolors['text'] : '000000';
 
-	$css = 'img.latex { vertical-align: middle; border: none; }';
+	if ( !isset($comments) )
+		$comments = 0;
 
-	if ( !$latex_path = @exec('which latex') )
-		$latex_path = false;
-	if ( !$dvipng_path = @exec('which dvipng') )
-		$dvipng_path = false;
+	if ( !isset($css) )
+		$css = 'img.latex { vertical-align: middle; border: none; }';
 
-	$wrapper = false;
+	if ( !isset($latex_path) )
+		$latex_path = trim(@exec('which latex'));
+	if ( !isset($dvipng_path) )
+		$dvipng_path = trim(@exec('which dvipng'));
+
+	$latex_path  = @file_exists($latex_path)  ? $latex_path  : false;
+	$dvipng_path = @file_exists($dvipng_path) ? $dvipng_path : false;
+
+	if ( !isset($wrapper) )
+		$wrapper = false;
+
 	$force_math_mode = 1;
 
 	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'wrapper', 'force_math_mode' );
 	update_option( 'wp_latex', $wp_latex );
+	wp_redirect('plugins.php?activate=true&latex_message=true');
+	exit;
+/*
+	$re = add_query_arg( 'page', plugin_basename(__FILE__) );
+	$re = remove_query_arg( 'action', $re );
+	wp_redirect( $re );
+	exit;
+*/
 }
 
 add_action( 'admin_menu', 'wp_latex_admin_menu' );

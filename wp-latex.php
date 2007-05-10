@@ -2,18 +2,19 @@
 /*
 Plugin Name: WP LaTeX
 Plugin URI: http://automattic.com/code/
-Description: Converts inline latex code into PNG images that are outomatically displayed in your blog posts and comments.  Requires latex, dvipng and FauxML.
+Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.  Requires latex, dvipng and <a href='http://wordpress.org/extend/plugins/fauxml/'>FauxML</a>.
 Version: 0.7
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
 */
 
 function wp_latex_init() {
-	if ( !function_exists('wp_add_faux_ml') )
-		return;
 	$wp_latex = get_option( 'wp_latex' );
 	define( 'AUTOMATTIC_LATEX_LATEX_PATH', $wp_latex['latex_path'] );
 	define( 'AUTOMATTIC_LATEX_DVIPNG_PATH', $wp_latex['dvipng_path'] );
+
+	if ( !function_exists('wp_add_faux_ml') )
+		return;
 
 	wp_add_faux_ml( '#\$latex[= ](.*?[^\\\\])\$#i', 'wp_latex_markup' );
 	if ( isset($wp_latex['comments']) && $wp_latex['comments'] )
@@ -89,6 +90,6 @@ function wp_latex_hash_file( $latex, $bg, $fg, $s ) {
 add_action( 'init', 'wp_latex_init' );
 add_action( 'wp_head', 'wp_latex_head' );
 register_activation_hook( __FILE__, 'wp_latex_activate' );
-if ( is_admin() )
+if ( function_exists('is_admin') && is_admin() ) // hack.  Can't go in init since wp_latex_activate is defined in wp-latex-admin.php.
 	require('wp-latex-admin.php');
 ?>
