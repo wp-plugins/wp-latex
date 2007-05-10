@@ -18,8 +18,6 @@ function wp_latex_init() {
 	wp_add_faux_ml( '#\$latex[= ](.*?[^\\\\])\$#i', 'wp_latex_markup' );
 	if ( isset($wp_latex['comments']) && $wp_latex['comments'] )
 		wp_add_faux_ml( '#\$latex[= ](.*?[^\\\\])\$#i', 'wp_latex_markup', 'comment_text' );
-	if ( is_admin() )
-		require('wp-latex-admin.php');
 }
 
 function wp_latex_head() {
@@ -90,5 +88,7 @@ function wp_latex_hash_file( $latex, $bg, $fg, $s ) {
 
 add_action( 'init', 'wp_latex_init' );
 add_action( 'wp_head', 'wp_latex_head' );
-
+register_activation_hook( __FILE__, 'wp_latex_activate' );
+if ( is_admin() )
+	require('wp-latex-admin.php');
 ?>

@@ -92,6 +92,9 @@ function wp_latex_test_image() {
 	if ( is_array($wp_latex) )
 		extract($wp_latex);
 
+	if ( !$latex_path || !$dvipng_path )
+		return;
+
 	$automattic_latex = new Automattic_Latex;
 	$automattic_latex->init( ABSPATH . 'wp-content/latex/test', '\displaystyle P_\nu^{-\mu}(z)=\frac{\left(z^2-1\right)^{\frac{\mu}{2}}}{2^\mu \sqrt{\pi}\Gamma\left(\mu+\frac{1}{2}\right)}\int_{-1}^1\frac{\left(1-t^2\right)^{\mu -\frac{1}{2}}}{\left(z+t\sqrt{z^2-1}\right)^{\mu-\nu}}dt', $bg, $fg, 3 );
 	if ( isset($wrapper) )
@@ -171,11 +174,25 @@ function wp_latex_admin_page() {
 <table class="optiontable editform">
 	<tr>
 		<th scope="row"<?php if ( in_array('latex_path', $errors) ) echo ' class="error"'; ?>><code>latex</code> path</th>
-		<td><input type='text' name='wp_latex[latex_path]' value='<?php echo attribute_escape( $latex_path ); ?>' id='wp-latex-path' /></td>
+		<td><input type='text' name='wp_latex[latex_path]' value='<?php echo attribute_escape( $latex_path ); ?>' id='wp-latex-path' /><?php
+			if ( !$wp_latex['latex_path'] ) {
+				if ( $guess_latex_path = exec('which latex') )
+					echo " Try: <code>$guess_latex_path</code>";
+				else
+					echo " Not found.  Enter full path to <code>latex</code>";
+			}
+		?></td>
 	</tr>
 	<tr>
 		<th scope="row"<?php if ( in_array('dvipng_path', $errors) ) echo ' class="error"'; ?>><code>dvipng</code> path</th>
-		<td><input type='text' name='wp_latex[dvipng_path]' value='<?php echo attribute_escape( $dvipng_path ); ?>' id='wp-dvipng-path' /></td>
+		<td><input type='text' name='wp_latex[dvipng_path]' value='<?php echo attribute_escape( $dvipng_path ); ?>' id='wp-dvipng-path' /><?php
+			if ( !$wp_latex['dvipng_path'] ) {
+				if ( $guess_dvipng_path = exec('which dvipng') )
+					echo " Try: <code>$guess_dvipng_path</code>";
+				else
+					echo " Not found.  Enter full path to <code>dvipng</code>";
+			}
+		?></td>
 	</tr>
 </table>
 
@@ -244,8 +261,10 @@ function wp_latex_activate() {
 
 	$css = 'img.latex { vertical-align: middle; border: none; }';
 
-	$latex_path = '/usr/bin/latex';
-	$dvipng_path = '/usr/bin/dvipng';
+	if ( !$latex_path = @exec('which latex') )
+		$latex_path = false;
+	if ( !$dvipng_path = @exec('which dvipng') )
+		$dvipng_path = false;
 
 	$wrapper = false;
 	$force_math_mode = 1;
@@ -254,7 +273,6 @@ function wp_latex_activate() {
 	update_option( 'wp_latex', $wp_latex );
 }
 
-register_activation_hook( __FILE__, 'wp_latex_activate' );
 add_action( 'admin_menu', 'wp_latex_admin_menu' );
 
 ?>
