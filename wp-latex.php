@@ -3,7 +3,7 @@
 Plugin Name: WP LaTeX
 Plugin URI: http://automattic.com/code/
 Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.  Requires latex, dvipng and <a href='http://wordpress.org/extend/plugins/fauxml/'>FauxML</a>.
-Version: 0.7
+Version: 0.9
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
 */
@@ -65,17 +65,12 @@ function wp_latex_markup( $matches ) {
 
 	if ( !file_exists($file) ) {
 		require_once( 'automattic-latex.php' );
-		$umask = umask(0);
-			$new_dir = dirname($file);
-			if ( !is_dir($new_dir) )
-				mkdir($new_dir, fileperms(dirname($new_dir)) % 010000 );
-		umask($umask);
 		$object = new Automattic_Latex( $latex, $bg, $fg, $s );
 		if ( isset($force_math_mode) )
 			$object->force_math_mode( $force_math_mode );
 		if ( isset($wrapper) )
 			$object->wrapper( $wrapper );
-		$image_file = $object->create_png( $file );
+		$image = $object->create_png( $file );
 	}
 
 	$url = clean_url( get_bloginfo( 'wpurl' ) . preg_replace('|^.*?/wp-content/latex/|', '/wp-content/latex/', $file) );

@@ -107,9 +107,10 @@ function wp_latex_test_image() {
 
 	$message = '';
 
+	$r = false;
+
 	$image = $automattic_latex->create_png( ABSPATH . 'wp-content/latex/test.png', true );
 	exec( "mv $automattic_latex->tmp_file.log " . ABSPATH . 'wp-content/latex/test.log' );
-	$automattic_latex->unlink_tmp_files();
 	if ( is_wp_error($image) ) :
 		$code = $image->get_error_code();
 		if ( false !== strpos($code, '_exec') ) :
@@ -117,7 +118,7 @@ function wp_latex_test_image() {
 			exec( $exec, $out, $r );
 			$message = "<h4>Command run:</h4>\n";
 			$message .= "<pre><code>$exec</code></pre>\n";
-			$out = str_replace( "$automattic_latex->tmp_file.log", '<strong><a href="' . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.log' ) . '">test.log</a></strong>', join("\n", $out));
+			$out = preg_replace( '/tex_.+?\.log/i', '<strong><a href="' . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.log' ) . '">test.log</a></strong>', join("\n", $out));
 			$message .= "<h4>Result:</h4>\n";
 			$message .= "<pre><code>$out</code></pre>\n";
 			$message .= "<p>Exit code: $r</p>";
@@ -125,14 +126,13 @@ function wp_latex_test_image() {
 			$message = '<p>' . $image->get_error_message() . "</p>\n";
 		endif;
 		echo $message;
-	elseif ( !file_exists($image) ) :
-		return false;
-	else :
+	elseif ( file_exists($image) ) :
 		@unlink(ABSPATH . 'wp-content/latex/test.log');
 		echo "<img src='" . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.png') . "' alt='Test Image' title='If you can see a big integral, all is well.' style='display: block; margin: 0 auto;' />\n";
-		return true;
+		$r = true;
 	endif;
-	return false;
+	$automattic_latex->unlink_tmp_files();
+	return $r;
 }
 
 function wp_latex_admin_page() {
@@ -141,7 +141,7 @@ function wp_latex_admin_page() {
 
 	global $wp_latex_errors;
 	require_once('automattic-latex.php');
-	$automattic_latex = new Automattic_Latex;
+	$automattic_latex = new Automattic_Latex( '\LaTeX' );
 	$default_wrapper = $automattic_latex->wrapper();
 	unset($automattic_latex);
 	$action = clean_url( remove_query_arg( 'updated' ) );

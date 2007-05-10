@@ -1,6 +1,6 @@
 <?php
 /*
-Version: 0.7
+Version: 0.9
 Inspired in part by:
 	Steve Mayer ( http://www.mayer.dial.pipex.com/tex.htm ): LatexRender WP Plugin ( http://sixthform.info/steve/wordpress/index.php )
 	Benjamin Zeiss ( zeiss@math.uni-goettingen.de ): LaTeX Rendering Class
@@ -132,7 +132,7 @@ class Automattic_Latex {
 	}
 
 	function display_png( $png_file = false, $debug = false ) {
-		$image_file = $this->create_png( $png_file, $debug )
+		$image_file = $this->create_png( $png_file, $debug );
 		automattic_display_png( $image_file, false );
 		if ( !$png_file )
 			@unlink($image_file);
@@ -155,11 +155,10 @@ class Automattic_Latex {
 
 		$latex = $this->wrap();
 
-		if ( !$this->tmp_file = tempnam(null, 'tex') )
+		if ( !$this->tmp_file = tempnam(null, 'tex_') )
 			return new WP_Error( 'tempnam', __( 'Could not create temporary file.', 'automattic-latex' ) );
 		$dir = dirname($this->tmp_file);
-
-		$png_file = $png_file ? $png_file : "$this->tmp_file.png";
+		$jobname = basename($this->tmp_file);
 
 		if ( !$f = @fopen( $this->tmp_file, 'w' ) )
 			return new WP_Error( 'fopen', __( 'Could not open TEX file for writing', 'automattic-latex' ) );
@@ -168,17 +167,30 @@ class Automattic_Latex {
 		fclose($f);
 
 		$r = false;
-		$d = 0;
-		$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . " --halt-on-error --interaction nonstopmode $this->tmp_file";
-		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight";
-		putenv("TEXMFOUTPUT=$dir");
-		exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
-		if ( 0 != $l )
-			$r = new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
-		else
+
+		do {
+			putenv("TEXMFOUTPUT=$dir");
+			$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . " --halt-on-error --interaction nonstopmode --jobname $jobname $this->tmp_file";
+			exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
+			if ( 0 != $l ) {
+				$r = new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
+				break;
+			}
+
+			if ( !$png_file )
+				$png_file = "$this->tmp_file.png";
+			elseif ( !wp_mkdir_p( dirname($png_file) ) ) {
+				$r = new WP_Error( 'mkdir', __( 'Could not create subdirectory', 'automattic-latex' ) );
+				break;
+			}
+		
+			$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight";
 			exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
-		if ( !$r && 0 != $d )
-			$r = new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
+			if ( 0 != $d ) {
+				$r = new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
+				break;
+			}
+		} while(0);
 
 		if ( !$debug )
 			$this->unlink_tmp_files();
@@ -228,7 +240,7 @@ function automattic_display_png( $png, $exit = true ) {
 
 	if ( @get_resource_type( $png ) )
 		$image =& $png;
-	elseif ( file_exists($png) ) {
+	elseif ( file_exists($png) )
 		$image_file =& $png;
 	elseif ( is_wp_error( $png ) )
 		$error = $png->get_error_message();
@@ -258,6 +270,35 @@ function automattic_display_png( $png, $exit = true ) {
 	if ( $exit )
 		exit;
 }
+
+if ( !function_exists('wp_mkdir_p') ) :
+function wp_mkdir_p($target) {
+	// from php.net/mkdir user contributed notes
+	if (file_exists($target)) {
+		if (! @ is_dir($target))
+			return false;
+		else
+			return true;
+	}
+
+	// Attempting to create the directory may clutter up our display.
+	if (@ mkdir($target)) {
+		$stat = @ stat(dirname($target));
+		$dir_perms = $stat['mode'] & 0007777;  // Get the permission bits.
+		@ chmod($target, $dir_perms);
+		return true;
+	} else {
+		if ( is_dir(dirname($target)) )
+			return false;
+	}
+
+	// If the above failed, attempt to create the parent node, then try again.
+	if (wp_mkdir_p(dirname($target)))
+		return wp_mkdir_p($target);
+
+	return false;
+}
+endif;
 
 if ( !function_exists('__') ) :
 function __($a) { return $a; }
