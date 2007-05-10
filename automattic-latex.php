@@ -170,7 +170,9 @@ class Automattic_Latex {
 
 		do {
 			putenv("TEXMFOUTPUT=$dir");
-			$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . " --halt-on-error --interaction nonstopmode --jobname $jobname $this->tmp_file";
+			exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --halt-on-error --version > /dev/null 2>&1', $latex_test, $v );
+			$halt = $v ? '' : ' --halt-on-error';
+			$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$halt --interaction nonstopmode --jobname $jobname $this->tmp_file";
 			exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
 			if ( 0 != $l ) {
 				$r = new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
