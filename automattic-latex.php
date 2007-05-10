@@ -61,7 +61,6 @@ class Automattic_Latex {
 		'write'
 	);
 
-	var $file_base;
 	var $latex;
 	var $bg_rgb;
 	var $fg_rgb;
@@ -70,15 +69,9 @@ class Automattic_Latex {
 	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\pagestyle{empty}";
 	var $force = true;
 
-	function new_latex( $file_base, $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
-		$object = new Automattic_Latex();
+	var $tmp_file;
 
-		$object->init( $file_base, $latex, $bg_hex, $fg_hex, $size );
-		return $object;
-	}
-
-	function init( $file_base, $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
-		$this->file_base = (string) $file_base;
+	function Automattic_Latex( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
 		$this->latex  = (string) $latex;
 
 		$bg_hex = (string) $bg_hex;
@@ -138,7 +131,15 @@ class Automattic_Latex {
 		endswitch;
 	}
 
-	function create_png( $debug = false ) {
+	function display_png( $png_file = false, $debug = false ) {
+		$image_file = $this->create_png( $png_file, $debug )
+		automattic_display_png( $image_file, false );
+		if ( !$png_file )
+			@unlink($image_file);
+		exit;
+	}
+
+	function create_png( $png_file = false, $debug = false ) {
 		if ( !$this->latex )
 			return new WP_Error( 'blank', __( 'No formula provided', 'automattic-latex' ) );
 
@@ -154,22 +155,22 @@ class Automattic_Latex {
 
 		$latex = $this->wrap();
 
-		$umask = umask(0);
-			$dir = dirname($this->file_base);
-			if ( !is_dir($dir) )
-				mkdir($dir, fileperms(dirname($dir)) % 010000 );
+		if ( !$this->tmp_file = tempnam(null, 'tex') )
+			return new WP_Error( 'tempnam', __( 'Could not create temporary file.', 'automattic-latex' ) );
+		$dir = dirname($this->tmp_file);
 
-			if ( !$f = @fopen( "$this->file_base.tex", 'w' ) )
-				return new WP_Error( 'fopen', __( 'Could not open TEX file for writing', 'automattic-latex' ) );
-			if ( false === @fwrite($f, $latex) )
-				return new WP_Error( 'fwrite', __( 'Could not write to TEX file', 'automattic-latex' ) );
-			fclose($f);
-		umask($umask);
+		$png_file = $png_file ? $png_file : "$this->tmp_file.png";
+
+		if ( !$f = @fopen( $this->tmp_file, 'w' ) )
+			return new WP_Error( 'fopen', __( 'Could not open TEX file for writing', 'automattic-latex' ) );
+		if ( false === @fwrite($f, $latex) )
+			return new WP_Error( 'fwrite', __( 'Could not write to TEX file', 'automattic-latex' ) );
+		fclose($f);
 
 		$r = false;
 		$d = 0;
-		$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . " --halt-on-error --interaction nonstopmode $this->file_base.tex";
-		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->file_base.dvi -o $this->file_base.png -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight";
+		$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . " --halt-on-error --interaction nonstopmode $this->tmp_file";
+		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight";
 		putenv("TEXMFOUTPUT=$dir");
 		exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
 		if ( 0 != $l )
@@ -182,26 +183,7 @@ class Automattic_Latex {
 		if ( !$debug )
 			$this->unlink_tmp_files();
 
-		return $r ? $r : "$this->file_base.png";
-	}
-
-	function unlink_tmp_files() {
-		@unlink( "$this->file_base.tex" );
-		@unlink( "$this->file_base.aux" );
-		@unlink( "$this->file_base.log" );
-		@unlink( "$this->file_base.dvi" );
-	}
-        
-	function force_math_mode( $force = null ) {
-		if ( !is_null($force) )
-			$this->force = (bool) $force;
-		return $this->force;
-	}
-
-	function wrapper( $wrapper = false ) {
-		if ( is_string($wrapper) )
-			$this->wrapper = $wrapper;
-		return $this->wrapper;
+		return $r ? $r : $png_file;
 	}
 
 	function wrap() {
@@ -217,28 +199,44 @@ class Automattic_Latex {
 		return $string;
 	}
 
-	function display_png( $image ) {
-		if ( @get_resource_type( $image ) ); // [sic]
-		elseif ( is_wp_error($image) )
-			$image = Automattic_Latex::render_error( $image );
-		elseif ( !file_exists($image) )
-			$image = Automattic_Latex::render_error( __( 'Error Loading Image', 'automattic-latex' ) );
-		else
-			$image = imagecreatefrompng( $image );
-
-		header("Content-Type: image/png");
-		header("Vary: Accept-Encoding"); // Handle proxies
-		header("Expires: " . gmdate("D, d M Y H:i:s", time() + 864000) . " GMT"); // 10 days
-
-		imagepng($image);
-		imagedestroy($image);
-		exit;
+	function unlink_tmp_files() {
+		@unlink( $this->tmp_file );
+		@unlink( "$this->tmp_file.aux" );
+		@unlink( "$this->tmp_file.log" );
+		@unlink( "$this->tmp_file.dvi" );
+	}
+        
+	function force_math_mode( $force = null ) {
+		if ( !is_null($force) )
+			$this->force = (bool) $force;
+		return $this->force;
 	}
 
-	function render_error( $error ) {
-		if ( is_wp_error($error) )
-			$error = $error->get_error_message();
+	function wrapper( $wrapper = false ) {
+		if ( is_string($wrapper) )
+			$this->wrapper = $wrapper;
+		return $this->wrapper;
+	}
 
+}
+
+// Feed it an image resource, a PNG filename, or a WP_Error or error string
+// Sends cache headers.
+function automattic_display_png( $png, $exit = true ) {
+	$image = $image_file  = false;
+	$error = __( 'Error Loading Image', 'automattic-latex' );
+
+	if ( @get_resource_type( $png ) )
+		$image =& $png;
+	elseif ( file_exists($png) ) {
+		$image_file =& $png;
+	elseif ( is_wp_error( $png ) )
+		$error = $png->get_error_message();
+
+	if ( $image_file )
+		$image = imagecreatefrompng( $image_file );
+
+	if ( !$image ) {
 		$width  = 7.3 * strlen($error);
 		$image  = imagecreatetruecolor($width, 18);
 		$yellow = imagecolorallocate($image, 255, 255, 0);
@@ -246,10 +244,19 @@ class Automattic_Latex {
 
 		imagefilledrectangle($image, 0, 0, $width, 20, $yellow);
 		imagestring($image, 3, 4, 2, $error, $red);
-
-		return $image;
 	}
 
+	header('Content-Type: image/png');
+	header('Vary: Accept-Encoding'); // Handle proxies
+	header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 864000) . ' GMT'); // 10 days
+	if ( $image_file )
+		header('Content-Length: ' . filesize($image_file));
+
+	imagepng($image);
+	imagedestroy($image);
+
+	if ( $exit )
+		exit;
 }
 
 if ( !function_exists('__') ) :

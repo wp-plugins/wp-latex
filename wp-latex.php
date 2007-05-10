@@ -63,19 +63,22 @@ function wp_latex_markup( $matches ) {
 
 	$image = '';
 
-	if ( !file_exists("$file.png") ) {
+	if ( !file_exists($file) ) {
 		require_once( 'automattic-latex.php' );
-		$object = Automattic_Latex::new_latex( $file, $latex, $bg, $fg, $s );
+		$umask = umask(0);
+			$new_dir = dirname($file);
+			if ( !is_dir($new_dir) )
+				mkdir($new_dir, fileperms(dirname($new_dir)) % 010000 );
+		umask($umask);
+		$object = new Automattic_Latex( $latex, $bg, $fg, $s );
 		if ( isset($force_math_mode) )
 			$object->force_math_mode( $force_math_mode );
 		if ( isset($wrapper) )
 			$object->wrapper( $wrapper );
-		if ( isset($exit_code) )
-			$object->latex_exit_code = (int) $exit_code;
-		$image = $object->create_png();
+		$image_file = $object->create_png( $file );
 	}
 
-	$url = clean_url( get_bloginfo( 'wpurl' ) . preg_replace('|^.*?/wp-content/latex/|', '/wp-content/latex/', "$file.png") );
+	$url = clean_url( get_bloginfo( 'wpurl' ) . preg_replace('|^.*?/wp-content/latex/|', '/wp-content/latex/', $file) );
 
 	$alt = attribute_escape( is_wp_error($image) ? $image->get_error_message() . ": $latex" : $latex );
 
@@ -84,7 +87,7 @@ function wp_latex_markup( $matches ) {
 
 function wp_latex_hash_file( $latex, $bg, $fg, $s ) {
 	$hash = md5( $latex );
-	return ABSPATH . 'wp-content/latex/' . substr($hash, 0, 3) . "/$hash-$bg$fg$s";
+	return ABSPATH . 'wp-content/latex/' . substr($hash, 0, 3) . "/$hash-$bg$fg$s.png";
 }
 
 add_action( 'init', 'wp_latex_init' );

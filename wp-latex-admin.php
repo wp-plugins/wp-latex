@@ -99,16 +99,17 @@ function wp_latex_test_image() {
 	if ( !$latex_path || !$dvipng_path )
 		return;
 
-	$automattic_latex = new Automattic_Latex;
-	$automattic_latex->init( ABSPATH . 'wp-content/latex/test', '\displaystyle P_\nu^{-\mu}(z)=\frac{\left(z^2-1\right)^{\frac{\mu}{2}}}{2^\mu \sqrt{\pi}\Gamma\left(\mu+\frac{1}{2}\right)}\int_{-1}^1\frac{\left(1-t^2\right)^{\mu -\frac{1}{2}}}{\left(z+t\sqrt{z^2-1}\right)^{\mu-\nu}}dt', $bg, $fg, 3 );
+	@unlink(ABSPATH . 'wp-content/latex/test.png');
+
+	$automattic_latex = new Automattic_Latex( '\displaystyle P_\nu^{-\mu}(z)=\frac{\left(z^2-1\right)^{\frac{\mu}{2}}}{2^\mu \sqrt{\pi}\Gamma\left(\mu+\frac{1}{2}\right)}\int_{-1}^1\frac{\left(1-t^2\right)^{\mu -\frac{1}{2}}}{\left(z+t\sqrt{z^2-1}\right)^{\mu-\nu}}dt', $bg, $fg, 3 );
 	if ( isset($wrapper) )
 		$automattic_latex->wrapper( $wrapper );
 
 	$message = '';
-	@unlink(ABSPATH . 'wp-content/latex/test.png');
-	$automattic_latex->unlink_tmp_files();
 
-	$image = $automattic_latex->create_png( true );
+	$image = $automattic_latex->create_png( ABSPATH . 'wp-content/latex/test.png', true );
+	exec( "mv $automattic_latex->tmp_file.log " . ABSPATH . 'wp-content/latex/test.log' );
+	$automattic_latex->unlink_tmp_files();
 	if ( is_wp_error($image) ) :
 		$code = $image->get_error_code();
 		if ( false !== strpos($code, '_exec') ) :
@@ -116,7 +117,7 @@ function wp_latex_test_image() {
 			exec( $exec, $out, $r );
 			$message = "<h4>Command run:</h4>\n";
 			$message .= "<pre><code>$exec</code></pre>\n";
-			$out = str_replace( 'test.log', '<strong><a href="' . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.log' ) . '">test.log</a></strong>', join("\n", $out));
+			$out = str_replace( "$automattic_latex->tmp_file.log", '<strong><a href="' . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.log' ) . '">test.log</a></strong>', join("\n", $out));
 			$message .= "<h4>Result:</h4>\n";
 			$message .= "<pre><code>$out</code></pre>\n";
 			$message .= "<p>Exit code: $r</p>";
@@ -127,8 +128,8 @@ function wp_latex_test_image() {
 	elseif ( !file_exists($image) ) :
 		return false;
 	else :
+		@unlink(ABSPATH . 'wp-content/latex/test.log');
 		echo "<img src='" . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.png') . "' alt='Test Image' title='If you can see a big integral, all is well.' style='display: block; margin: 0 auto;' />\n";
-		$automattic_latex->unlink_tmp_files();
 		return true;
 	endif;
 	return false;
