@@ -71,6 +71,8 @@ class Automattic_Latex {
 
 	var $tmp_file;
 
+	var $_debug = false;
+
 	function Automattic_Latex( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
 		$this->latex  = (string) $latex;
 
@@ -131,15 +133,15 @@ class Automattic_Latex {
 		endswitch;
 	}
 
-	function display_png( $png_file = false, $debug = false ) {
-		$image_file = $this->create_png( $png_file, $debug );
+	function display_png( $png_file = false ) {
+		$image_file = $this->create_png( $png_file );
 		automattic_display_png( $image_file, false );
 		if ( !$png_file )
 			@unlink($image_file);
 		exit;
 	}
 
-	function create_png( $png_file = false, $debug = false ) {
+	function create_png( $png_file = false ) {
 		if ( !$this->latex )
 			return new WP_Error( 'blank', __( 'No formula provided', 'automattic-latex' ) );
 
@@ -194,9 +196,6 @@ class Automattic_Latex {
 			}
 		} while(0);
 
-		if ( !$debug )
-			$this->unlink_tmp_files();
-
 		return $r ? $r : $png_file;
 	}
 
@@ -214,6 +213,9 @@ class Automattic_Latex {
 	}
 
 	function unlink_tmp_files() {
+		if ( $this->_debug )
+			return;
+
 		@unlink( $this->tmp_file );
 		@unlink( "$this->tmp_file.aux" );
 		@unlink( "$this->tmp_file.log" );
