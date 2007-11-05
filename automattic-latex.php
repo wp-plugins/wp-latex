@@ -204,7 +204,7 @@ class Automattic_Latex {
 		$string .= "\n\begin{document}\n";
 		if ( $this->size ) $string .= "\begin{{$this->size}}\n";
 		if ( $this->force_math_mode() )
-			$string .= $this->latex == '\LaTeX' || $this->latex == '\TeX' ? $this->latex : '$' . $this->latex . '$';
+			$string .= $this->latex == '\LaTeX' || $this->latex == '\TeX' ? $this->latex : '$\\\\' . $this->latex . '$';
 		else
 			$string .= $this->latex;
 		if ( $this->size ) $string .= "\n\end{{$this->size}}";
