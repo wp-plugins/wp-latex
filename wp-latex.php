@@ -2,16 +2,20 @@
 /*
 Plugin Name: WP LaTeX
 Plugin URI: http://automattic.com/code/
-Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.  Requires latex, dvipng and <a href='http://wordpress.org/extend/plugins/fauxml/'>FauxML</a>.
-Version: 0.9
+Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.  Requires latex and <a href='http://wordpress.org/extend/plugins/fauxml/'>FauxML</a>. Uses dvipng if available, dvips and convert if not.
+Version: 1.0
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
 */
+if ( !defined('ABSPATH') ) exit;
 
 function wp_latex_init() {
 	$wp_latex = get_option( 'wp_latex' );
+
 	define( 'AUTOMATTIC_LATEX_LATEX_PATH', $wp_latex['latex_path'] );
 	define( 'AUTOMATTIC_LATEX_DVIPNG_PATH', $wp_latex['dvipng_path'] );
+	define( 'AUTOMATTIC_LATEX_DVIPS_PATH', $wp_latex['dvips_path'] );
+	define( 'AUTOMATTIC_LATEX_CONVERT_PATH', $wp_latex['convert_path'] );
 
 	if ( !function_exists('wp_add_faux_ml') )
 		return;
@@ -87,7 +91,54 @@ function wp_latex_hash_file( $latex, $bg, $fg, $s ) {
 
 add_action( 'init', 'wp_latex_init' );
 add_action( 'wp_head', 'wp_latex_head' );
-register_activation_hook( __FILE__, 'wp_latex_activate' );
+do {
+	// We're inside a symlink ( __FILE__ resolves symlinks: lame! )
+	if ( false === strpos( __FILE__, ABSPATH . PLUGINDIR . '/' ) ) {
+		// Only go through this mess in admin
+		if ( function_exists('is_admin') && !is_admin() )
+			break;
+
+		// realpath( __FILE__ ) is redundant.  That's why we're in this mess.
+		$wp_latex_real_file = realpath( __FILE__ );
+		// we'll put the symlink path here
+		$wp_latex_fake_file = false;
+
+		$plugin_dir = dir( ABSPATH . PLUGINDIR );
+		$dir_count = 1;
+		while ( false !== ( $plugin_dir_entry = $plugin_dir->read() ) ) {
+			if ( '.' == $plugin_dir_entry || '..' == $plugin_dir_entry )
+				continue;
+
+			// absolute path
+			$plugin_dir_entry = $plugin_dir->path . DIRECTORY_SEPARATOR . $plugin_dir_entry;
+			// realpath
+			$real_file = realpath( $plugin_dir_entry );
+
+			// If it's a dir and it's a parent of what we're looking for, look in there instead
+			// We probably can't catch nested symlinks
+			if ( is_dir( $real_file ) && 0 === strpos( $wp_latex_real_file, $real_file ) ) {
+				$plugin_dir->close();
+				if ( ++$dir_count > 10 ) // Probably recursive symlinks
+					break;
+				$plugin_dir = dir( $plugin_dir_entry );
+				continue;
+			}
+			if ( $real_file == $wp_latex_real_file ) {
+				$wp_latex_fake_file = $plugin_dir_entry;
+				break;
+			}
+		}
+
+		if ( $wp_latex_fake_file )
+			register_activation_hook( $wp_latex_fake_file, 'wp_latex_activate' );
+
+		$plugin_dir->close();
+		unset( $wp_latex_real_file, $wp_latex_fake_file, $plugin_dir, $plugin_dir_entry, $real_file );
+	} else {
+		register_activation_hook( __FILE__, 'wp_latex_activate' );
+	}
+} while(0);
+
 if ( function_exists('is_admin') && is_admin() ) // hack.  Can't go in init since wp_latex_activate is defined in wp-latex-admin.php.
 	require('wp-latex-admin.php');
 ?>

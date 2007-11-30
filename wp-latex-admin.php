@@ -33,7 +33,10 @@ function wp_latex_admin_post() {
 function wp_latex_admin_update( $new ) {
 	$errors = new WP_Error;
 
-	extract(get_option( 'wp_latex' ));
+	$wp_latex = get_option( 'wp_latex' );
+	if ( !is_array( $wp_latex ) )
+		$wp_latex = array();
+	extract( $wp_latex, EXTR_SKIP );
 
 	if ( isset($new['fg']) ) :
 		$fg = substr(preg_replace( '/[^0-9a-f]/i', '', $new['fg'] ), 0, 6);
@@ -71,19 +74,39 @@ function wp_latex_admin_update( $new ) {
 
 	if ( isset($new['latex_path']) ) :
 		if ( !file_exists($new['latex_path']) )
-			$errors->add( 'latex_path', '<code>latex</code> path not found', $new['latex_path'] );
+			$errors->add( 'latex_path', '<code>latex</code> path not found.', $new['latex_path'] );
 		else
 			$latex_path = trim($new['latex_path']);
 	endif;
 
 	if ( isset($new['dvipng_path']) ) :
-		if ( !file_exists($new['dvipng_path']) )
-			$errors->add( 'dvipng_path', '<code>dvipng</code> path not found', $new['dvipng_path'] );
+		$new['dvipng_path'] = trim($new['dvipng_path']);
+		// empty path means use dvips instead, not an error
+		if ( ( strlen($new['dvipng_path']) > 0 ) && !file_exists($new['dvipng_path']) )
+			$errors->add( 'dvipng_path', '<code>dvipng</code> path not found.', $new['dvipng_path'] );
 		else
 			$dvipng_path = $new['dvipng_path'];
 	endif;
 
-	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'force_math_mode', 'wrapper' );
+	if ( isset($new['dvips_path']) ) :
+		if ( !file_exists($new['dvips_path']) ) {
+			if ( !$dvipng_path )
+				$errors->add( 'dvips_path', '<code>dvips</code> path not found.', $new['dvips_path'] );
+		} else {
+			$dvips_path = trim($new['dvips_path']);
+		}
+	endif;
+
+	if ( isset($new['convert_path']) ) :
+		if ( !file_exists($new['convert_path']) ) {
+			if ( !$dvipng_path )
+				$errors->add( 'convert_path', '<code>convert</code> path not found.', $new['convert_path'] );
+		}else {
+			$convert_path = trim($new['convert_path']);
+		}
+	endif;
+
+	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'dvips_path', 'convert_path', 'force_math_mode', 'wrapper' );
 	update_option( 'wp_latex', $wp_latex );
 	return $errors;
 }
@@ -96,7 +119,7 @@ function wp_latex_test_image() {
 	if ( is_array($wp_latex) )
 		extract($wp_latex);
 
-	if ( !$latex_path || !$dvipng_path )
+	if ( !$latex_path || (!$dvipng_path && (!$dvips_path || !$convert_path)))
 		return;
 
 	@unlink(ABSPATH . 'wp-content/latex/test.png');
@@ -185,7 +208,7 @@ function wp_latex_admin_page() {
 				if ( file_exists($guess_latex_path) )
 					echo " Try: <code>$guess_latex_path</code>";
 				else
-					echo " Not found.  Enter full path to <code>latex</code>";
+					echo " Not found.  Enter full path to <code>latex</code>.";
 			}
 		?></td>
 	</tr>
@@ -196,12 +219,40 @@ function wp_latex_admin_page() {
 				$guess_dvipng_path = trim(@exec('which dvipng'));
 				if ( file_exists($guess_dvipng_path) )
 					echo " Try: <code>$guess_dvipng_path</code>";
+				elseif ( $wp_latex['dvips_path'] && $wp_latex['convert_path'] )
+					echo " Not found.  Using <code>dvips</code>/<code>convert</code> instead.";
 				else
-					echo " Not found.  Enter full path to <code>dvipng</code>";
+					echo " Not found.  Enter full path to <code>dvipng</code> or leave empty to use <code>dvips</code>/<code>convert</code> instead.";
+			}
+		?></td>
+	</tr>
+	<tr>
+		<th scope="row"<?php if ( in_array('dvips_path', $errors) ) echo ' class="error"'; ?>><code>dvips</code> path</th>
+		<td><input type='text' name='wp_latex[dvips_path]' value='<?php echo attribute_escape( $dvips_path ); ?>' id='wp-dvips-path' /><?php
+			if ( !$wp_latex['dvips_path'] ) {
+				$guess_dvips_path = trim(@exec('which dvips'));
+				if ( file_exists($guess_dvips_path) )
+					echo " Try: <code>$guess_dvips_path</code>";
+				elseif ( !$wp_latex['dvipng_path'] )
+					echo " Not found.  Enter full path to <code>dvips</code> or use <code>dvipng</code>.";
+			}
+		?></td>
+	</tr>
+	<tr>
+		<th scope="row"<?php if ( in_array('convert_path', $errors) ) echo ' class="error"'; ?>><code>convert</code> path</th>
+		<td><input type='text' name='wp_latex[convert_path]' value='<?php echo attribute_escape( $convert_path ); ?>' id='wp-convert-path' /><?php
+			if ( !$wp_latex['convert_path'] ) {
+				$guess_convert_path = trim(@exec('which convert'));
+				if ( file_exists($guess_convert_path) )
+					echo " Try: <code>$guess_convert_path</code>";
+				elseif ( !$wp_latex['dvipng_path'] )
+					echo " Not found.  Enter full path to <code>convert</code> or use <code>dvipng</code>.";
 			}
 		?></td>
 	</tr>
 </table>
+
+<p>WP LaTeX will use <code>dvipng</code> if you specify its path.  Otherwise, it will fall back to using <code>dvips</code> and <code>convert</code>.</p>
 
 </fieldset>
 
@@ -222,7 +273,7 @@ function wp_latex_admin_page() {
 	</tr>
 
 	<tr>
-		<th scope="row">Custom CSS to apply to the LaTeX images</th>
+		<th scope="row">Custom CSS to use with the LaTeX images</th>
 		<td><textarea name='wp_latex[css]' id='wp-latex-css' class='narrow'><?php echo wp_specialchars( $css ); ?></textarea></td>
 	</tr>
 </table>
@@ -276,16 +327,22 @@ function wp_latex_activate() {
 		$latex_path = trim(@exec('which latex'));
 	if ( !isset($dvipng_path) )
 		$dvipng_path = trim(@exec('which dvipng'));
+	if ( !isset($dvips_path) )
+		$dvips_path = trim(@exec('which dvips'));
+	if ( !isset($convert_path) )
+		$convert_path = trim(@exec('which convert'));
 
-	$latex_path  = @file_exists($latex_path)  ? $latex_path  : false;
-	$dvipng_path = @file_exists($dvipng_path) ? $dvipng_path : false;
+	$latex_path   = @file_exists($latex_path)   ? $latex_path   : false;
+	$dvipng_path  = @file_exists($dvipng_path)  ? $dvipng_path  : false;
+	$dvips_path   = @file_exists($dvips_path)   ? $dvips_path   : false;
+	$convert_path = @file_exists($convert_path) ? $convert_path : false;
 
 	if ( !isset($wrapper) )
 		$wrapper = false;
 
 	$force_math_mode = 1;
 
-	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'wrapper', 'force_math_mode' );
+	$wp_latex = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'dvips_path', 'convert_path', 'wrapper', 'force_math_mode' );
 	update_option( 'wp_latex', $wp_latex );
 	wp_redirect('plugins.php?activate=true&latex_message=true');
 	exit;

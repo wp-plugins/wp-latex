@@ -1,5 +1,5 @@
 === WP LaTeX ===
-Contributors: mdawaffe
+Contributors: mdawaffe, sidney
 Tags: latex, math, equations
 Stable tag: 0.7
 Requires at least: 2.1
@@ -25,15 +25,15 @@ support this plugin.
 1. Your server must be running some flavor of Linux, UNIX, or BSD.
 2. You must have a working installation of LaTeX running.  I recommend the
    `tetex-extra` package availabe to most Linux distributions.
-3. `dvipng` needs to be installed as well (easily installed with the `dvipng`
-   package).
+3. Either `dvipng` or both `dvips` and `convert` must installed as well.  `dvipng` is
+   preferred (provided by the `dvipng` package).
 
 = Setup =
 1. Install and activate the [FauxML plugin](http://wordpress.org/extend/plugins/fauxml/).
 2. Create a directory called `/wp-content/latex/` and make it writable by your
-   webserver (chmod 777 will do the trick).
-3. Upload `wp-latex.php` and `automattic-latex.php` to the
-   `/wp-content/plugins/` directory.
+   webserver (chmod 777 will do the trick, but talk to your host to see what they recommend).
+3. Upload all the files included in this plugin to your `/wp-content/plugins/` directory
+   (either directly or in a subdirectory).
 4. Activate the plugin through the 'Plugins' menu in WordPress.
 5. Go to Plugins -> WP LaTeX to configure the plugin.
 

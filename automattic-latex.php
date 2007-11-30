@@ -1,12 +1,35 @@
 <?php
 /*
-Version: 0.9
+Version: 1.0
 Inspired in part by:
 	Steve Mayer ( http://www.mayer.dial.pipex.com/tex.htm ): LatexRender WP Plugin ( http://sixthform.info/steve/wordpress/index.php )
 	Benjamin Zeiss ( zeiss@math.uni-goettingen.de ): LaTeX Rendering Class
 */
 
-if ( !defined('AUTOMATTIC_LATEX_LATEX_PATH') || !defined('AUTOMATTIC_LATEX_DVIPNG_PATH') )
+/*
+ * AUTOMATTIC_LATEX_LATEX_PATH must be defined
+ * Either
+ * 	AUTOMATTIC_LATEX_DVIPNG_PATH
+ * 	or
+ * 	AUTOMATTIC_LATEX_CONVERT_PATH and AUTOMATTIC_LATEX_DVIPS_PATH
+ * must be defined
+ */
+if ( !defined('AUTOMATTIC_LATEX_LATEX_PATH') || !file_exists('AUTOMATTIC_LATEX_LATEX_PATH') )
+	return;
+
+if (
+	( !defined('AUTOMATTIC_LATEX_DVIPNG_PATH') || !file_exists('AUTOMATTIC_LATEX_DVIPNG_PATH') )
+
+	&&
+
+	(
+		( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists('AUTOMATTIC_LATEX_DVIPS_PATH') )
+
+		||
+
+		( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists('AUTOMATTIC_LATEX_CONVERT_PATH') )
+	)
+)
 	return;
 
 class Automattic_Latex {
@@ -66,7 +89,8 @@ class Automattic_Latex {
 	var $fg_rgb;
 	var $size;
 
-	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\pagestyle{empty}";
+	// %BGCOLOR% and %FGCOLOR% will be replaced with RGB values
+	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\usepackage{color}\n\definecolor{bg}{rgb}{%BGCOLOR%}\n\definecolor{fg}{rgb}{%FGCOLOR%}\n\pagecolor{bg}\n\color{fg}\n\pagestyle{empty}";
 	var $force = true;
 
 	var $tmp_file;
@@ -82,6 +106,7 @@ class Automattic_Latex {
 		$fg_hex = (string) $fg_hex;
 		$this->fg_rgb = $this->hex2rgb( $fg_hex ? $fg_hex : '000000' );
 
+		$this->wrapper = str_replace(array('%BGCOLOR%', '%FGCOLOR%'), array($this->bg_rgb, $this->fg_rgb), $this->wrapper);
 		$this->size = $this->size_it( $size );
 	}
 
@@ -98,7 +123,7 @@ class Automattic_Latex {
 		foreach ( array('red', 'green', 'blue') as $color )
 			$$color = number_format( hexdec(ltrim($$color,'0')) / 255, 3 );
 
-		return "$red $green $blue";
+		return "$red,$green,$blue";
 	}
 
 	function size_it( $z ) {
@@ -173,8 +198,10 @@ class Automattic_Latex {
 		do {
 			putenv("TEXMFOUTPUT=$dir");
 			exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --halt-on-error --version > /dev/null 2>&1', $latex_test, $v );
-			$halt = $v ? '' : ' --halt-on-error';
-			$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$halt --interaction nonstopmode --jobname $jobname $this->tmp_file";
+			$haltopt = $v ? '' : ' --halt-on-error';
+			exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --jobname foo --version < /dev/null >/dev/null 2>&1', $latex_test, $v );
+			$jobopt = $v ? '' : " --jobname $jobname";
+			$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$haltopt --interaction nonstopmode $jobopt $this->tmp_file";
 			exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
 			if ( 0 != $l ) {
 				$r = new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
@@ -188,10 +215,32 @@ class Automattic_Latex {
 				break;
 			}
 		
-			$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -bg 'rgb $this->bg_rgb' -fg 'rgb $this->fg_rgb' -T tight";
-			exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
-			if ( 0 != $d ) {
-				$r = new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
+			if ( defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) && file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) ) {
+				$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -T tight";
+				exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
+				if ( 0 != $d ) {
+					$r = new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
+					break;
+				}
+				break;
+			}
+
+			if ( ( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists('AUTOMATTIC_LATEX_DVIPS_PATH') ) || ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists('AUTOMATTIC_LATEX_CONVERT_PATH') ) ) {
+				$r = new WP_Error( 'dviping', __( 'Neither dvipng nor dvips and convert are available.', 'automattic-latex' ) );
+				break;
+			}
+
+			$dvips_exec = AUTOMATTIC_LATEX_DVIPS_PATH . " -E $this->tmp_file.dvi -o $this->tmp_file.ps";
+			exec( "$dvips_exec > /dev/null 2>&1", $dvips_out, $dps );
+			if ( 0 != $dps ) {
+				$r = new WP_Error( 'dvips_exec', __( 'Cannot create image', 'automattic-latex' ), $dvips_exec );
+				break;
+			}
+
+			$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . " -units PixelsPerInch -density 72 $this->tmp_file.ps $png_file";
+			exec( "$convert_exec > /dev/null 2>&1", $convert_out, $c );
+			if ( 0 != $c ) {
+				$r = new WP_Error( 'convert_exec', __( 'Cannot create image', 'automattic-latex' ), $convert_exec );
 				break;
 			}
 		} while(0);
@@ -203,10 +252,13 @@ class Automattic_Latex {
 		$string  = $this->wrapper();
 		$string .= "\n\begin{document}\n";
 		if ( $this->size ) $string .= "\begin{{$this->size}}\n";
+
+		// We add a newline before the latex so that any indentations are all even
 		if ( $this->force_math_mode() )
 			$string .= $this->latex == '\LaTeX' || $this->latex == '\TeX' ? $this->latex : '$\\\\' . $this->latex . '$';
 		else
 			$string .= $this->latex;
+
 		if ( $this->size ) $string .= "\n\end{{$this->size}}";
 		$string .= "\n\end{document}";
 		return $string;
@@ -220,6 +272,7 @@ class Automattic_Latex {
 		@unlink( "$this->tmp_file.aux" );
 		@unlink( "$this->tmp_file.log" );
 		@unlink( "$this->tmp_file.dvi" );
+		@unlink( "$this->tmp_file.ps" );
 	}
         
 	function force_math_mode( $force = null ) {
@@ -304,10 +357,12 @@ function wp_mkdir_p($target) {
 }
 endif;
 
+// In WordPress, __() is used for gettext.  If not available, just return the string.
 if ( !function_exists('__') ) :
 function __($a) { return $a; }
 endif;
 
+// In WordPress, this class is used to pass errors between functions.  If not available, recreate in simplest possible form.
 if ( !class_exists('WP_Error') ) :
 class WP_Error {
 	var $e;
