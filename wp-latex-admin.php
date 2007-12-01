@@ -1,14 +1,15 @@
 <?php
 
 function wp_latex_admin_menu() {
-	$hook = add_submenu_page( 'plugins.php', 'WP LaTeX', 'WP LaTeX', 'manage_options', __FILE__, 'wp_latex_admin_page' );
+	$plugin_file = wp_latex_plugin_file_name( __FILE__ );
+	$hook = add_submenu_page( 'plugins.php', 'WP LaTeX', 'WP LaTeX', 'manage_options', $plugin_file, 'wp_latex_admin_page' );
 	add_action( "load-$hook", 'wp_latex_admin_post' );
 	if ( !is_writable(ABSPATH . 'wp-content/latex') )
 		add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-chmod\' class=\'error fade\'><p><code>wp-content/latex/</code> must be writeable for WP LaTeX to work.</p></div>";') );
 	if ( !function_exists('wp_add_faux_ml') )
 		add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-fauxml\' class=\'error fade\'><p><a href=\'http://wordpress.org/extend/plugins/fauxml/\'>FauxML</a> must be installed and activated for WP LaTeX to work.</p></div>";') );
 	if ( isset($_GET['latex_message']) )
-		add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-config\' class=\'updated fade\'><p>Make sure to check the <a href=\'plugins.php?page=' . urlencode(plugin_basename(__FILE__)) . '\'>WP LaTeX Options</a>.</p></div>";') );
+		add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-config\' class=\'updated fade\'><p>Make sure to check the <a href=\'plugins.php?page=' . urlencode(plugin_basename($plugin_file)) . '\'>WP LaTeX Options</a>.</p></div>";') );
 }
 
 function wp_latex_admin_post() {
@@ -346,12 +347,6 @@ function wp_latex_activate() {
 	update_option( 'wp_latex', $wp_latex );
 	wp_redirect('plugins.php?activate=true&latex_message=true');
 	exit;
-/*
-	$re = add_query_arg( 'page', plugin_basename(__FILE__) );
-	$re = remove_query_arg( 'action', $re );
-	wp_redirect( $re );
-	exit;
-*/
 }
 
 add_action( 'admin_menu', 'wp_latex_admin_menu' );
