@@ -243,6 +243,16 @@ class Automattic_Latex {
 				$r = new WP_Error( 'convert_exec', __( 'Cannot create image', 'automattic-latex' ), $convert_exec );
 				break;
 			}
+
+/*
+			$gs_exec = "/usr/bin/gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -r100 -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$png_file $this->tmp_file.ps";
+			exec( "$gs_exec > /dev/null 2>&1", $gs_out, $g );
+			if ( 0 != $g ) {
+				$r = new WP_Error( 'gs_exec', __( 'Cannot create image', 'automattic-latex' ), $gs_exec );
+				break;
+			}
+*/
+
 		} while(0);
 
 		return $r ? $r : $png_file;
