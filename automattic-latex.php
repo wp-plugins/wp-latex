@@ -183,7 +183,7 @@ class Automattic_Latex {
 		return $this->dvipng( $png_file );
 	}
 
-	function dvipng( $png_file )
+	function dvipng( $png_file ) {
 		if ( !defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) || !file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) )
 			return new WP_Error( 'dvipng_path', __( 'dvipng path not specified.', 'automatti-latex' ) );
 
@@ -193,7 +193,7 @@ class Automattic_Latex {
 		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -T tight -D 100";
 		exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
 		if ( 0 != $d )
-			retun new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
+			return new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
 
 		return $png_file;
 	}
