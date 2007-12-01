@@ -63,8 +63,9 @@ class Automattic_Latex {
 	var $fg_rgb;
 	var $size;
 
-	// %BGCOLOR% and %FGCOLOR% will be replaced with RGB values
-	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\usepackage{color}\n\definecolor{bg}{rgb}{%BGCOLOR%}\n\definecolor{fg}{rgb}{%FGCOLOR%}\n\pagecolor{bg}\n\color{fg}\n\pagestyle{empty}";
+	// Really should be called $preamble.
+	// %BG_COLOR_RGB% and %FG_COLOR_RGB% will be replaced with RGB values
+	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\usepackage{color}\n\definecolor{bg}{rgb}{%BG_COLOR_RGB%}\n\definecolor{fg}{rgb}{%FG_COLOR_RGB%}\n\pagecolor{bg}\n\color{fg}\n\pagestyle{empty}";
 	var $force = true;
 
 	var $tmp_file;
@@ -80,7 +81,6 @@ class Automattic_Latex {
 		$fg_hex = (string) $fg_hex;
 		$this->fg_rgb = $this->hex2rgb( $fg_hex ? $fg_hex : '000000' );
 
-		$this->wrapper = str_replace(array('%BGCOLOR%', '%FGCOLOR%'), array($this->bg_rgb, $this->fg_rgb), $this->wrapper);
 		$this->size = $this->size_it( $size );
 	}
 
@@ -200,6 +200,9 @@ class Automattic_Latex {
 
 	function wrap() {
 		$string  = $this->wrapper();
+
+		$string = str_replace(array('%BG_COLOR_RGB%', '%FG_COLOR_RGB%'), array($this->bg_rgb, $this->fg_rgb), $string);
+
 		$string .= "\n\begin{document}\n";
 		if ( $this->size ) $string .= "\begin{{$this->size}}\n";
 

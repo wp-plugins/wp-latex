@@ -288,8 +288,10 @@ function wp_latex_admin_page() {
 		<th scope="row" style="vertical-align: top">LaTeX Preamble</th>
 		<td>
 			<textarea name='wp_latex[wrapper]' rows='8' id='wp-latex-wrapper' class='narrow'><?php echo wp_specialchars( $wrapper ); ?></textarea><br />
-			<h4>Leaving the above blank will use the default preamble:</h4>
-			<p><?php echo nl2br($default_wrapper); ?></p>
+			<h4>Leaving the above blank will use the following default preamble.</h4>
+			<p><code>%BG_COLOR_RGB%</code> and <code>%FG_COLOR_RGB</code> will be replaced with the RGB color representations of the background and foreground colors, respectively.</p>
+			<hr />
+			<pre><code><?php echo $default_wrapper; ?></code></pre>
 		</td>
 	</tr>
 	</tr>
