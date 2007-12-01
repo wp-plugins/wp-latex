@@ -125,7 +125,7 @@ function wp_latex_test_image() {
 
 	@unlink(ABSPATH . 'wp-content/latex/test.png');
 
-	$automattic_latex = new Automattic_Latex( '\displaystyle P_\nu^{-\mu}(z)=\frac{\left(z^2-1\right)^{\frac{\mu}{2}}}{2^\mu \sqrt{\pi}\Gamma\left(\mu+\frac{1}{2}\right)}\int_{-1}^1\frac{\left(1-t^2\right)^{\mu -\frac{1}{2}}}{\left(z+t\sqrt{z^2-1}\right)^{\mu-\nu}}dt', $bg, $fg, 3 );
+	$automattic_latex = wp_latex_new_object( '\displaystyle P_\nu^{-\mu}(z)=\frac{\left(z^2-1\right)^{\frac{\mu}{2}}}{2^\mu \sqrt{\pi}\Gamma\left(\mu+\frac{1}{2}\right)}\int_{-1}^1\frac{\left(1-t^2\right)^{\mu -\frac{1}{2}}}{\left(z+t\sqrt{z^2-1}\right)^{\mu-\nu}}dt', $bg, $fg, 3 );
 	if ( isset($wrapper) )
 		$automattic_latex->wrapper( $wrapper );
 
@@ -165,7 +165,7 @@ function wp_latex_admin_page() {
 
 	global $wp_latex_errors;
 	require_once('automattic-latex.php');
-	$automattic_latex = new Automattic_Latex( '\LaTeX' );
+	$automattic_latex = wp_latex_new_object( '\LaTeX' );
 	$default_wrapper = $automattic_latex->wrapper();
 	unset($automattic_latex);
 	$action = clean_url( remove_query_arg( 'updated' ) );

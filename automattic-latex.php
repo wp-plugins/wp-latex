@@ -6,32 +6,6 @@ Inspired in part by:
 	Benjamin Zeiss ( zeiss@math.uni-goettingen.de ): LaTeX Rendering Class
 */
 
-/*
- * AUTOMATTIC_LATEX_LATEX_PATH must be defined
- * Either
- * 	AUTOMATTIC_LATEX_DVIPNG_PATH
- * 	or
- * 	AUTOMATTIC_LATEX_CONVERT_PATH and AUTOMATTIC_LATEX_DVIPS_PATH
- * must be defined
- */
-if ( !defined('AUTOMATTIC_LATEX_LATEX_PATH') || !file_exists(AUTOMATTIC_LATEX_LATEX_PATH) )
-	return;
-
-if (
-	( !defined('AUTOMATTIC_LATEX_DVIPNG_PATH') || !file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) )
-
-	&&
-
-	(
-		( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists(AUTOMATTIC_LATEX_DVIPS_PATH) )
-
-		||
-
-		( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) )
-	)
-)
-	return;
-
 class Automattic_Latex {
 	var $_blacklist = array(
 		'^^',
@@ -193,69 +167,35 @@ class Automattic_Latex {
 			return new WP_Error( 'fwrite', __( 'Could not write to TEX file', 'automattic-latex' ) );
 		fclose($f);
 
-		$r = false;
+		putenv("TEXMFOUTPUT=$dir");
+		exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --halt-on-error --version > /dev/null 2>&1', $latex_test, $v );
+		$haltopt = $v ? '' : ' --halt-on-error';
+		exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --jobname foo --version < /dev/null >/dev/null 2>&1', $latex_test, $v );
+		$jobopt = $v ? '' : " --jobname $jobname";
+		$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$haltopt --interaction nonstopmode $jobopt $this->tmp_file";
+		exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
+		if ( 0 != $l )
+			return new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
 
-		do {
-			putenv("TEXMFOUTPUT=$dir");
-			exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --halt-on-error --version > /dev/null 2>&1', $latex_test, $v );
-			$haltopt = $v ? '' : ' --halt-on-error';
-			exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --jobname foo --version < /dev/null >/dev/null 2>&1', $latex_test, $v );
-			$jobopt = $v ? '' : " --jobname $jobname";
-			$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$haltopt --interaction nonstopmode $jobopt $this->tmp_file";
-			exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
-			if ( 0 != $l ) {
-				$r = new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
-				break;
-			}
+		if ( !$png_file )
+			$png_file = "$this->tmp_file.png";
 
-			if ( !$png_file )
-				$png_file = "$this->tmp_file.png";
-			elseif ( !wp_mkdir_p( dirname($png_file) ) ) {
-				$r = new WP_Error( 'mkdir', __( 'Could not create subdirectory', 'automattic-latex' ) );
-				break;
-			}
-		
-			if ( defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) && file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) ) {
-				$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -T tight -D 100";
-				exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
-				if ( 0 != $d ) {
-					$r = new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
-					break;
-				}
-				break;
-			}
+		return $this->dvipng( $png_file );
+	}
 
-			if ( ( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists(AUTOMATTIC_LATEX_DVIPS_PATH) ) || ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) ) ) {
-				$r = new WP_Error( 'dviping', __( 'Neither dvipng nor dvips and convert are available.', 'automattic-latex' ) );
-				break;
-			}
+	function dvipng( $png_file )
+		if ( !defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) || !file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) )
+			return new WP_Error( 'dvipng_path', __( 'dvipng path not specified.', 'automatti-latex' ) );
 
-			$dvips_exec = AUTOMATTIC_LATEX_DVIPS_PATH . " -D 100 -E $this->tmp_file.dvi -o $this->tmp_file.ps";
-			exec( "$dvips_exec > /dev/null 2>&1", $dvips_out, $dps );
-			if ( 0 != $dps ) {
-				$r = new WP_Error( 'dvips_exec', __( 'Cannot create image', 'automattic-latex' ), $dvips_exec );
-				break;
-			}
+		if ( !wp_mkdir_p( dirname($png_file) ) )
+			return new WP_Error( 'mkdir', __( 'Could not create subdirectory', 'automattic-latex' ) );
 
-			$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . " -units PixelsPerInch -density 100 $this->tmp_file.ps $png_file";
-			exec( "$convert_exec > /dev/null 2>&1", $convert_out, $c );
-			if ( 0 != $c ) {
-				$r = new WP_Error( 'convert_exec', __( 'Cannot create image', 'automattic-latex' ), $convert_exec );
-				break;
-			}
+		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -T tight -D 100";
+		exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
+		if ( 0 != $d )
+			retun new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
 
-/*
-			$gs_exec = "/usr/bin/gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -r100 -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$png_file $this->tmp_file.ps";
-			exec( "$gs_exec > /dev/null 2>&1", $gs_out, $g );
-			if ( 0 != $g ) {
-				$r = new WP_Error( 'gs_exec', __( 'Cannot create image', 'automattic-latex' ), $gs_exec );
-				break;
-			}
-*/
-
-		} while(0);
-
-		return $r ? $r : $png_file;
+		return $png_file;
 	}
 
 	function wrap() {

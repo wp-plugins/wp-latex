@@ -39,6 +39,20 @@ function wp_latex_head() {
 <?php
 }
 
+function &wp_latex_new_object( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
+	require_once( 'automattic-latex.php' );
+	if ( defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) && file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) )
+		return new Automattic_Latex( $latex, $bg_hex, $fg_hex, $size );
+	if (
+		defined( 'AUTOMATTIC_LATEX_DVIPS_PATH' ) && file_exists(AUTOMATTIC_LATEX_DVIPS_PATH)
+		&&
+		defined( 'AUTOMATTIC_LATEX_CONVERT_PATH' ) && file_exists(AUTOMATTIC_LATEX_CONVERT_PATH)
+	) {
+		require_once( 'automattic-latex-dvips.php' );
+		return new Automattic_Latex_dvips( $latex, $bg_hex, $fg_hex, $size );
+	}
+}
+
 function wp_latex_markup( $matches ) {
 	if ( faux_faux() )
 		return '[LaTeX]';
@@ -68,8 +82,7 @@ function wp_latex_markup( $matches ) {
 	$image = '';
 
 	if ( !file_exists($file) ) {
-		require_once( 'automattic-latex.php' );
-		$object = new Automattic_Latex( $latex, $bg, $fg, $s );
+		$object = wp_latex_new_object( $latex, $bg, $fg, $s );
 		if ( isset($force_math_mode) )
 			$object->force_math_mode( $force_math_mode );
 		if ( isset($wrapper) )
