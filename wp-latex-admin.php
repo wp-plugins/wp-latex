@@ -155,7 +155,6 @@ function wp_latex_test_image() {
 		echo "<img src='" . clean_url(get_bloginfo( 'wpurl' ) . '/wp-content/latex/test.png') . "' alt='Test Image' title='If you can see a big integral, all is well.' style='display: block; margin: 0 auto;' />\n";
 		$r = true;
 	endif;
-	$automattic_latex->unlink_tmp_files();
 	return $r;
 }
 
@@ -167,7 +166,7 @@ function wp_latex_admin_page() {
 	require_once('automattic-latex.php');
 	$automattic_latex = wp_latex_new_object( '\LaTeX' );
 	$default_wrapper = $automattic_latex->wrapper();
-	unset($automattic_latex);
+
 	$action = clean_url( remove_query_arg( 'updated' ) );
 
 	$wp_latex = get_option( 'wp_latex' );

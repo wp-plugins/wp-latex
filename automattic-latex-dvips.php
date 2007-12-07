@@ -1,11 +1,6 @@
 <?php
 
 class Automattic_Latex_dvips extends Automattic_Latex {
-
-	function Automattic_Latex_dvips( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
-		parent::Automattic_Latex( $latex, $bg_hex, $fg_hex, $size );
-	}
-
 	function dvipng( $png_file ) {
 		if ( ( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists(AUTOMATTIC_LATEX_DVIPS_PATH) ) || ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) ) )
 			return  new WP_Error( 'dviping', __( 'Neither dvipng nor dvips and convert are available.', 'automattic-latex' ) );
@@ -21,6 +16,13 @@ class Automattic_Latex_dvips extends Automattic_Latex {
 			return new WP_Error( 'convert_exec', __( 'Cannot create image', 'automattic-latex' ), $convert_exec );
 
 		return $png_file;
+	}
+
+	function unlink_tmp_files() {
+		if ( !parent::unlink_tmp_files() )
+			return false;
+
+		@unlink( "$this->tmp_file.dvi" );
 	}
 }
 

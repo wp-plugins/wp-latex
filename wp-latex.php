@@ -51,6 +51,7 @@ function &wp_latex_new_object( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $
 		require_once( 'automattic-latex-dvips.php' );
 		return new Automattic_Latex_dvips( $latex, $bg_hex, $fg_hex, $size );
 	}
+	return new Automattic_Latex( $latex, $bg_hex, $fg_hex, $size );
 }
 
 function wp_latex_markup( $matches ) {

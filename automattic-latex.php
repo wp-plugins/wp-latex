@@ -73,6 +73,10 @@ class Automattic_Latex {
 	var $_debug = false;
 
 	function Automattic_Latex( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
+		$this->__construct( $latex, $bg_hex, $fg_hex, $size );
+	}
+
+	function __construct( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
 		$this->latex  = (string) $latex;
 
 		$bg_hex = (string) $bg_hex;
@@ -82,6 +86,13 @@ class Automattic_Latex {
 		$this->fg_rgb = $this->hex2rgb( $fg_hex ? $fg_hex : '000000' );
 
 		$this->size = $this->size_it( $size );
+
+		// For PHP 4
+		register_shutdown_function(array(&$this, "__destruct"));
+	}
+
+	function __destruct() {
+		$this->unlink_tmp_files();
 	}
 
 	function hex2rgb( $color ) {
@@ -221,11 +232,15 @@ class Automattic_Latex {
 		if ( $this->_debug )
 			return;
 
+		if ( !$this->tmp_file )
+			return false;
+
 		@unlink( $this->tmp_file );
 		@unlink( "$this->tmp_file.aux" );
 		@unlink( "$this->tmp_file.log" );
-		@unlink( "$this->tmp_file.dvi" );
 		@unlink( "$this->tmp_file.ps" );
+
+		return true;
 	}
         
 	function force_math_mode( $force = null ) {
