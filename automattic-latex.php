@@ -4,6 +4,15 @@ Version: 1.0
 Inspired in part by:
 	Steve Mayer ( http://www.mayer.dial.pipex.com/tex.htm ): LatexRender WP Plugin ( http://sixthform.info/steve/wordpress/index.php )
 	Benjamin Zeiss ( zeiss@math.uni-goettingen.de ): LaTeX Rendering Class
+Copyright: Automattic, Inc.
+Copyright: Sidney Markowitz.
+License: GPL2+
+*/
+
+/*
+Must define the following constants:
+AUTOMATTIC_LATEX_LATEX_PATH
+AUTOMATTIC_LATEX_DVIPNG_PATH
 */
 
 class Automattic_Latex {
@@ -152,6 +161,9 @@ class Automattic_Latex {
 	}
 
 	function create_png( $png_file = false ) {
+		if ( !defined( 'AUTOMATTIC_LATEX_LATEX_PATH' ) || !file_exists(AUTOMATTIC_LATEX_LATEX_PATH) )
+			return new WP_Error( 'latex_path', __( 'latex path not specified.', 'automatti-latex' ) );
+
 		if ( !$this->latex )
 			return new WP_Error( 'blank', __( 'No formula provided', 'automattic-latex' ) );
 

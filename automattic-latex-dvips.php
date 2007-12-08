@@ -1,9 +1,22 @@
 <?php
+/*
+Copyright: Automattic, Inc.
+Copyright: Sidney Markowitz.
+License: GPL2+
+*/
+
+/*
+Must define the following constants
+AUTOMATTIC_LATEX_DVIPS_PATH
+AUTOMATTIC_LATEX_CONVERT_PATH
+*/
 
 class Automattic_Latex_dvips extends Automattic_Latex {
 	function dvipng( $png_file ) {
 		if ( ( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists(AUTOMATTIC_LATEX_DVIPS_PATH) ) || ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) ) )
-			return  new WP_Error( 'dviping', __( 'Neither dvipng nor dvips and convert are available.', 'automattic-latex' ) );
+			return new WP_Error( 'dvips', __( 'dvips path not specified.', 'automattic-latex' ) );
+		if ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) )
+			return new WP_Error( 'convert', __( 'convert path not specified.', 'automattic-latex' ) );
 
 		$dvips_exec = AUTOMATTIC_LATEX_DVIPS_PATH . " -D 100 -E $this->tmp_file.dvi -o $this->tmp_file.ps";
 		exec( "$dvips_exec > /dev/null 2>&1", $dvips_out, $dps );

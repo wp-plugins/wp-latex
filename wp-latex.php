@@ -6,7 +6,12 @@ Description: Converts inline latex code into PNG images that are displayed in yo
 Version: 1.0
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
+
+Copyright: Automattic, Inc.
+Copyright: Sidney Markowitz.
+License: GPL2+
 */
+
 if ( !defined('ABSPATH') ) exit;
 
 function wp_latex_init() {
@@ -25,6 +30,7 @@ function wp_latex_init() {
 		wp_add_faux_ml( '#\$latex[= ](.*?[^\\\\])\$#i', 'wp_latex_markup', 'comment_text' );
 }
 
+// User defined LaTeX CSS
 function wp_latex_head() {
 	$wp_latex = get_option( 'wp_latex' );
 	if ( !$wp_latex['css'] )
@@ -39,6 +45,7 @@ function wp_latex_head() {
 <?php
 }
 
+// Returns Automattic_Latex_XXX object depending on what conversion tools are available.
 function &wp_latex_new_object( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
 	require_once( 'automattic-latex.php' );
 	if ( defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) && file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) )
@@ -51,9 +58,12 @@ function &wp_latex_new_object( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $
 		require_once( 'automattic-latex-dvips.php' );
 		return new Automattic_Latex_dvips( $latex, $bg_hex, $fg_hex, $size );
 	}
+
+	// Default to dvipng even if not there.  Can access error messages, wrappers, etc. this way.	
 	return new Automattic_Latex( $latex, $bg_hex, $fg_hex, $size );
 }
 
+// Shortcode -> <img> markup.  Creates images as necessary.
 function wp_latex_markup( $matches ) {
 	if ( faux_faux() )
 		return '[LaTeX]';
@@ -98,11 +108,13 @@ function wp_latex_markup( $matches ) {
 	return "<img src='$url' alt='$alt' title='$alt' class='latex' />";
 }
 
+// Creates unique filename for given LaTeX, colors, size
 function wp_latex_hash_file( $latex, $bg, $fg, $s ) {
 	$hash = md5( $latex );
 	return ABSPATH . 'wp-content/latex/' . substr($hash, 0, 3) . "/$hash-$bg$fg$s.png";
 }
 
+// Return this file's link within the plugin directory.
 function wp_latex_plugin_file_name( $file ) {
 	if ( false !== strpos( $file, ABSPATH . PLUGINDIR . DIRECTORY_SEPARATOR ) )
 		return $file;

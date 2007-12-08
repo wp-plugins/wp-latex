@@ -57,6 +57,7 @@ function wp_latex_admin_update( $new ) {
 
 	$comments = intval($new['comments'] != 0);
 
+//	Require force_math_mode to be on.
 //	if ( isset($new['force_math_mode']) )
 //		$force_math_mode = intval($new['force_math_mode'] != 1);
 
@@ -112,6 +113,7 @@ function wp_latex_admin_update( $new ) {
 	return $errors;
 }
 
+// Attempts to use current settings to generate a temporory image (new with every page load)
 function wp_latex_test_image() {
 	if ( !is_writable(ABSPATH . 'wp-content/latex') )
 		return false;
@@ -307,6 +309,7 @@ function wp_latex_admin_page() {
 <?php
 }
 
+// Sets up default options
 function wp_latex_activate() {
 	$wp_latex = get_option( 'wp_latex' );
 	if ( is_array($wp_latex) )

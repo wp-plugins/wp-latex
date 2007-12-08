@@ -108,7 +108,7 @@ should probably just use LaTeX.
 * `Could not open TEX file for writing` or `Could not write to TEX file`: You have
   some file permissions problems.  See Intallation instructions.
 
-= Do I really need to intsall FauxML for WP LaTeX to work? =
+= Do I really need to install FauxML for WP LaTeX to work? =
 
 Yes.
 
