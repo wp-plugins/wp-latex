@@ -351,5 +351,3 @@ class WP_Error {
 }
 function is_wp_error($a) { return is_object($a) && is_a($a, 'WP_Error'); }
 endif;
-
-?>
