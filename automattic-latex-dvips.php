@@ -11,19 +11,21 @@ AUTOMATTIC_LATEX_DVIPS_PATH
 AUTOMATTIC_LATEX_CONVERT_PATH
 */
 
-class Automattic_Latex_dvips extends Automattic_Latex {
+require_once( dirname( __FILE__ ) . '/automattic-latex-dvipng.php' ) );
+
+class Automattic_Latex_DVIPS extends Automattic_Latex_DVIPNG {
 	function dvipng( $png_file ) {
 		if ( ( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists(AUTOMATTIC_LATEX_DVIPS_PATH) ) || ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) ) )
 			return new WP_Error( 'dvips', __( 'dvips path not specified.', 'automattic-latex' ) );
 		if ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) )
 			return new WP_Error( 'convert', __( 'convert path not specified.', 'automattic-latex' ) );
 
-		$dvips_exec = AUTOMATTIC_LATEX_DVIPS_PATH . " -D 100 -E $this->tmp_file.dvi -o $this->tmp_file.ps";
+		$dvips_exec = AUTOMATTIC_LATEX_DVIPS_PATH . ' -D 100 -E ' . escapeshellarg( "$this->tmp_file.dvi" ) . ' -o ' . escapeshellarg( "$this->tmp_file.ps" );
 		exec( "$dvips_exec > /dev/null 2>&1", $dvips_out, $dps );
 		if ( 0 != $dps )
 			return new WP_Error( 'dvips_exec', __( 'Cannot create image', 'automattic-latex' ), $dvips_exec );
 
-		$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . " -units PixelsPerInch -density 100 $this->tmp_file.ps $png_file";
+		$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . ' -units PixelsPerInch -density 100 ' . escapeshellarg( "$this->tmp_file.ps" ) . ' ' . escapeshellarg( $png_file );
 		exec( "$convert_exec > /dev/null 2>&1", $convert_out, $c );
 		if ( 0 != $c )
 			return new WP_Error( 'convert_exec', __( 'Cannot create image', 'automattic-latex' ), $convert_exec );
@@ -47,5 +49,3 @@ class Automattic_Latex_dvips extends Automattic_Latex {
 
 		return $png_file;
 */
-
-?>

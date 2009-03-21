@@ -3,7 +3,7 @@
 Plugin Name: WP LaTeX
 Plugin URI: http://automattic.com/code/
 Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.
-Version: 0.8-alpha
+Version: 1.1-alpha
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
 
@@ -16,11 +16,14 @@ if ( !defined('ABSPATH') ) exit;
 
 class WP_LaTeX {
 	var $options;
-	var $plugin_file;
+	var $methods = array(
+		'Automattic_Latex_WPCOM' => 'wpcom',
+		'Automattic_Latex_DVIPNG' => 'dvipng',
+		'Automattic_Latex_DVIPS' => 'dvips'
+	);
 
 	function init() {
 		$this->options = get_option( 'wp_latex' );
-		$this->plugin_file = __FILE__;
 	
 		@define( 'AUTOMATTIC_LATEX_LATEX_PATH', $this->options['latex_path'] );
 		@define( 'AUTOMATTIC_LATEX_DVIPNG_PATH', $this->options['dvipng_path'] );
@@ -32,13 +35,7 @@ class WP_LaTeX {
 		add_filter( 'the_content', array( &$this, 'inline_to_shortcode' ) );
 		add_shortcode( 'latex', array( &$this, 'shortcode' ) );
 
-	//	if ( !function_exists('wp_add_faux_ml') )
-	//		return;
-	
-	//	wp_add_faux_ml( '#\$latex[= ](.*?[^\\\\])\$#i', 'wp_latex_markup' );
-	//	if ( isset($this->options['comments']) && $this->options['comments'] )
-	//		wp_add_faux_ml( '#\$latex[= ](.*?[^\\\\])\$#i', 'wp_latex_markup', 'comment_text' );
-
+		// TODO: Add shortcode to comments
 	}
 
 	function wp_head() {
@@ -63,91 +60,76 @@ class WP_LaTeX {
 			'background' => 'ffffff',
 		), $_atts );
 	
-		if ( !isset( $_atts['size'] ) && isset( $_atts['s'] ) )
-			$atts['size'] = $_atts['s'];
-		if ( !isset( $_atts['color'] ) && isset( $_atts['fg'] ) )
-			$atts['color'] = $_atts['fg'];
-		if ( !isset( $_atts['background'] ) && isset( $_atts['bg'] ) )
-			$atts['background'] = $_atts['bg'];
-	
-///		$latex = str_replace(array('&lt;', '&gt;', '&quot;', '&#039;', '&#038;', '&amp;', "\n", "\r"), array('<', '>', '"', "'", '&', '&', ' ', ' '), $latex);
-	
-		$file = WP_LaTeX::hash_file( $latex, $atts['background'], $atts['color'], $atts['size'] );
-	
-		$image = '';
-	
-		if ( !file_exists( $file ) ) {
-			$latex_object = $this->new_latex( $latex, $bg, $fg, $s );
-			if ( isset( $this->options['force_math_mode'] ) )
-				$latex_object->force_math_mode( $this->options['force_math_mode'] );
-			if ( isset( $this->options['wrapper'] ) )
-				$latex_object->wrapper( $this->options['wrapper'] );
-			$image = $latex_object->create_png( $file );
-		}
-	
-		$url = clean_url( content_url( "latex/$file" ) );
-	
-		$alt = attribute_escape( is_wp_error($image) ? $image->get_error_message() . ": $latex" : $latex );
+		$latex = str_replace(array('&lt;', '&gt;', '&quot;', '&#039;', '&#038;', '&amp;', "\n", "\r"), array('<', '>', '"', "'", '&', '&', ' ', ' '), $latex);
+
+		$latex_object = $this->latex( $latex, $atts['background'], $atts['color'], $atts['size'] );
+
+		$url = clean_url( $latex_object->url );
+		$alt = attribute_escape( is_wp_error($latex_object->error) ? $latex_object->error->get_error_message() . ": $latex_object->latex" : $latex_object->latex );
 	
 		return "<img src='$url' alt='$alt' title='$alt' class='latex' />";
+	}
+	
+	function sanitize_color( $color ) {
+		$color = substr( preg_replace( '/[^0-9a-f]/i', '', $color ), 0, 6 );
+		if ( 6 > $l = strlen($color) )
+			$color .= str_repeat('0', 6 - $l );
+		return $color;
+	}		
+
+	function &latex( $latex, $background = false, $color = false, $size = 0 ) {
+		if ( empty( $this->methods[$this->options['method']] ) )
+			return false;
+
+		if ( !$background )
+			$background = empty( $this->options['background'] ) ? 'ffffff' : $this->options['background'];
+		if ( !$color )
+			$color = empty( $this->options['color'] ) ? '000000' : $this->options['color'];
+
+		require_once( dirname( __FILE__ ) . "/automattic-latex-{$this->methods[$this->options['method']]}.php" );
+		$latex_object = new $this->options['method']( $latex, $background, $color, $size, WP_CONTENT_DIR, WP_CONTENT_URL );
+		if ( isset( $this->options['force_math_mode'] ) )
+			$latex_object->force_math_mode( $this->options['force_math_mode'] );
+		if ( isset( $this->options['wrapper'] ) )
+			$latex_object->wrapper( $this->options['wrapper'] );
+		$latex_object->url();
+
+		return $latex_object;
 	}
 	
 	function inline_to_shortcode( $content ) {
 		if ( false === strpos( $content, '$latex' ) )
 			return $content;
 
-		return preg_replace_callback( '\$latex[= ](.*?[^\\\\])\$#', $content, array( 'WP_LaTeX', 'inline_to_shortcode_callback' ) );
+		return preg_replace_callback( '#\$latex[= ](.*?[^\\\\])\$#', array( &$this, 'inline_to_shortcode_callback' ), $content );
 	}
 
 	function inline_to_shortcode_callback( $matches ) {
 		$r = "[latex";
 
-		if ( preg_match( '/.+(&s=-?[0-4]).*/i', $matches[1], $s_matches ) ) {
+		if ( preg_match( '/.+((?:&#038;|&amp;)s=-?[0-4]).*/i', $matches[1], $s_matches ) ) {
 			$r .= ' size="' . (int) substr($s_matches[1], 3) . '"';
 			$matches[1] = str_replace( $s_matches[1], '', $matches[1] );
 		}
 
-		if ( preg_match( '/.+(&fg=[0-9a-f]{6}).*/i', $matches[1], $fg_matches ) ) {
+		if ( preg_match( '/.+((?:&#038;|&amp;)fg=[0-9a-f]{6}).*/i', $matches[1], $fg_matches ) ) {
 			$r .= ' color="' . substr($fg_matches[1], 4) . '"';
 			$matches[1] = str_replace( $fg_matches[1], '', $matches[1] );
 		}
 	
-		if ( preg_match( '/.+(&bg=[0-9a-f]{6}).*/i', $matches[1], $bg_matches ) ) {
+		if ( preg_match( '/.+((?:&#038;|&amp;)bg=[0-9a-f]{6}).*/i', $matches[1], $bg_matches ) ) {
 			$r .= ' background="' . substr($bg_matches[1], 4) . '"';
 			$matches[1] = str_replace( $bg_matches[1], '', $matches[1] );
 		}
 
 		return "$r]{$matches[1]}[/latex]";
 	}
-
-	// Returns Automattic_Latex_XXX object depending on what conversion tools are available.
-	function &new_latex( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
-		require_once( 'automattic-latex.php' );
-		if ( defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) && file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) )
-			return new Automattic_Latex( $latex, $bg_hex, $fg_hex, $size );
-		if (
-			defined( 'AUTOMATTIC_LATEX_DVIPS_PATH' ) && file_exists(AUTOMATTIC_LATEX_DVIPS_PATH)
-			&&
-			defined( 'AUTOMATTIC_LATEX_CONVERT_PATH' ) && file_exists(AUTOMATTIC_LATEX_CONVERT_PATH)
-		) {
-			require_once( 'automattic-latex-dvips.php' );
-			return new Automattic_Latex_dvips( $latex, $bg_hex, $fg_hex, $size );
-		}
-	
-		// Default to dvipng even if not there.  Can access error messages, wrappers, etc. this way.	
-		return new Automattic_Latex( $latex, $bg_hex, $fg_hex, $size );
-	}
-
-	// Creates unique filename for given LaTeX, colors, size
-	function hash_file( $latex, $bg, $fg, $s ) {
-		$hash = md5( $latex );
-		return ABSPATH . 'wp-content/latex/' . substr($hash, 0, 3) . "/$hash-$bg$fg$s.png";
-	}
 }
 
 if ( is_admin() ) {
 	require( dirname( __FILE__ ) . '/wp-latex-admin.php' );
 	$wp_latex = new WP_LaTeX_Admin;
+	register_activation_hook( __FILE__, array( &$wp_latex, 'activation_hook' ) );
 } else {
 	$wp_latex = new WP_LaTeX;
 }

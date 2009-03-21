@@ -1,6 +1,6 @@
 <?php
 /*
-Version: 1.0
+Version: 1.1
 Inspired in part by:
 	Steve Mayer ( http://www.mayer.dial.pipex.com/tex.htm ): LatexRender WP Plugin ( http://sixthform.info/steve/wordpress/index.php )
 	Benjamin Zeiss ( zeiss@math.uni-goettingen.de ): LaTeX Rendering Class
@@ -15,7 +15,9 @@ AUTOMATTIC_LATEX_LATEX_PATH
 AUTOMATTIC_LATEX_DVIPNG_PATH
 */
 
-class Automattic_Latex {
+require_once( dirname( __FILE__ ) . '/automattic-latex-wpcom.php' ) );
+
+class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 	var $_blacklist = array(
 		'^^',
 		'afterassignment',
@@ -67,10 +69,9 @@ class Automattic_Latex {
 		'write'
 	);
 
-	var $latex;
 	var $bg_rgb;
 	var $fg_rgb;
-	var $size;
+	var $size_latex;
 
 	// Really should be called $preamble.
 	// %BG_COLOR_RGB% and %FG_COLOR_RGB% will be replaced with RGB values
@@ -78,26 +79,27 @@ class Automattic_Latex {
 	var $force = true;
 
 	var $tmp_file;
+	var $png_path_base;
+	var $png_url_base;
+	var $file;
 
 	var $_debug = false;
 
-	function Automattic_Latex( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
-		$this->__construct( $latex, $bg_hex, $fg_hex, $size );
+	function Automattic_Latex( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0, $png_path_base = null, $png_url_base = null ) {
+		$this->__construct( $latex, $bg_hex, $fg_hex, $size, $png_path_base = null, $png_url_base = null );
 	}
 
-	function __construct( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
-		$this->latex  = (string) $latex;
-
-		$bg_hex = (string) $bg_hex;
-		$this->bg_rgb = $this->hex2rgb( $bg_hex ? $bg_hex : 'ffffff' );
-
-		$fg_hex = (string) $fg_hex;
-		$this->fg_rgb = $this->hex2rgb( $fg_hex ? $fg_hex : '000000' );
-
-		$this->size = $this->size_it( $size );
+	function __construct( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0, $png_path_base = null, $png_url_base = null ) {
+		parent::__construct( $latex, $bg_hex, $fg_hex, $size );
+		$this->bg_rgb = $this->hex2rgb( $this->bg_hex );
+		$this->fg_rgb = $this->hex2rgb( $this->fg_hex );
+		$this->size_latex = $this->size_it( $this->size );
+		$this->png_path_base = rtrim( $png_path_base, '/\\' );
+		$this->png_url_base = rtrim( $png_url_base, '/\\' );
 
 		// For PHP 4
-		register_shutdown_function(array(&$this, "__destruct"));
+		if ( version_compare( PHP_VERSION, 5, '<' ) )
+			register_shutdown_function(array(&$this, "__destruct"));
 	}
 
 	function __destruct() {
@@ -121,47 +123,37 @@ class Automattic_Latex {
 	}
 
 	function size_it( $z ) {
-		switch ( (int) $z ) :
+		switch ( (int) $z ) {
+		case 0 :
+			return false;
 		case 1 :
 			return 'large';
-			break;
 		case 2 :
 			return 'Large';
-			break;
 		case 3 :
 			return 'LARGE';
-			break;
 		case 4 :
 			return 'huge';
-			break;
 		case -1 :
 			return 'small';
-			break;
 		case -2 :
 			return 'footnotesize';
-			break;
 		case -3 :
 			return 'scriptsize';
-			break;
 		case -4 :
 			return 'tiny';
-			break;
 		default :
 			return false;
-			break;
-		endswitch;
+		}
 	}
 
-	function display_png( $png_file = false ) {
-		$image_file = $this->create_png( $png_file );
-		automattic_display_png( $image_file, false );
-		if ( !$png_file )
-			@unlink($image_file);
-		exit;
+	function hash_file() {
+		$hash = md5( $this->latex );
+		return substr($hash, 0, 3) . "/$hash-{$this->bg}{$this->fg}{$this->s}";
 	}
 
 	function create_png( $png_file = false ) {
-		if ( !defined( 'AUTOMATTIC_LATEX_LATEX_PATH' ) || !file_exists(AUTOMATTIC_LATEX_LATEX_PATH) )
+		if ( !defined( 'AUTOMATTIC_LATEX_LATEX_PATH' ) || !file_exists( AUTOMATTIC_LATEX_LATEX_PATH ) )
 			return new WP_Error( 'latex_path', __( 'latex path not specified.', 'automatti-latex' ) );
 
 		if ( !$this->latex )
@@ -194,8 +186,8 @@ class Automattic_Latex {
 		exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --halt-on-error --version > /dev/null 2>&1', $latex_test, $v );
 		$haltopt = $v ? '' : ' --halt-on-error';
 		exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --jobname foo --version < /dev/null >/dev/null 2>&1', $latex_test, $v );
-		$jobopt = $v ? '' : " --jobname $jobname";
-		$latex_exec ="cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$haltopt --interaction nonstopmode $jobopt $this->tmp_file";
+		$jobopt = $v ? '' : ' --jobname ' . escapeshellarg( "$jobname" );
+		$latex_exec = "cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$haltopt --interaction nonstopmode $jobopt " . escapeshellarg( "$this->tmp_file" );
 		exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
 		if ( 0 != $l )
 			return new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
@@ -213,7 +205,7 @@ class Automattic_Latex {
 		if ( !wp_mkdir_p( dirname($png_file) ) )
 			return new WP_Error( 'mkdir', __( 'Could not create subdirectory', 'automattic-latex' ) );
 
-		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . " $this->tmp_file.dvi -o $png_file -T tight -D 100";
+		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( "$this->tmp_file.dvi" ) . ' -o ' . escapeshellarg( $png_file ) . ' -T tight -D 100';
 		exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
 		if ( 0 != $d )
 			return new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
@@ -227,7 +219,7 @@ class Automattic_Latex {
 		$string = str_replace(array('%BG_COLOR_RGB%', '%FG_COLOR_RGB%'), array($this->bg_rgb, $this->fg_rgb), $string);
 
 		$string .= "\n\begin{document}\n";
-		if ( $this->size ) $string .= "\begin{{$this->size}}\n";
+		if ( $this->latex_size ) $string .= "\begin{{$this->size_latex}}\n";
 
 		// We add a newline before the latex so that any indentations are all even
 		if ( $this->force_math_mode() )
@@ -235,7 +227,7 @@ class Automattic_Latex {
 		else
 			$string .= $this->latex;
 
-		if ( $this->size ) $string .= "\n\end{{$this->size}}";
+		if ( $this->size_latex ) $string .= "\n\end{{$this->size_latex}}";
 		$string .= "\n\end{document}";
 		return $string;
 	}
@@ -251,6 +243,7 @@ class Automattic_Latex {
 		@unlink( "$this->tmp_file.aux" );
 		@unlink( "$this->tmp_file.log" );
 		@unlink( "$this->tmp_file.ps" );
+		@unlink( "$this->tmp_file.png" );
 
 		return true;
 	}
@@ -267,45 +260,26 @@ class Automattic_Latex {
 		return $this->wrapper;
 	}
 
-}
+	function url() {
+		if ( !$this->png_path_base || !$this->png_url_base ) {
+			$this->error = new WP_Error( 'png_url_base', __( 'Invalid path or URL' ) );
+			return $this->error;
+		}
 
-// Feed it an image resource, a PNG filename, or a WP_Error or error string
-// Sends cache headers.
-function automattic_display_png( $png, $exit = true ) {
-	$image = $image_file  = false;
-	$error = __( 'Error Loading Image', 'automattic-latex' );
+		$hash = $this->hash_file();
 
-	if ( @get_resource_type( $png ) )
-		$image =& $png;
-	elseif ( file_exists($png) )
-		$image_file =& $png;
-	elseif ( is_wp_error( $png ) )
-		$error = $png->get_error_message();
+		if ( !file_exists( "$this->png_path_base/$hash.png" ) ) {
+			$file = $this->create_png( "$this->png_path_base/$hash.png" );
+			if ( is_wp_error( $file ) ) {
+				$this->error =& $file;
+				return $this->error;
+			}
+		}
 
-	if ( $image_file )
-		$image = imagecreatefrompng( $image_file );
-
-	if ( !$image ) {
-		$width  = 7.3 * strlen($error);
-		$image  = imagecreatetruecolor($width, 18);
-		$yellow = imagecolorallocate($image, 255, 255, 0);
-		$red    = imagecolorallocate($image, 255, 0, 0);
-
-		imagefilledrectangle($image, 0, 0, $width, 20, $yellow);
-		imagestring($image, 3, 4, 2, $error, $red);
+		$this->file = "$this->png_path_base/$hash.png";
+		$this->url = "$this->png_url_base/$hash.png";
+		return $this->url;
 	}
-
-	header('Content-Type: image/png');
-	header('Vary: Accept-Encoding'); // Handle proxies
-	header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 864000) . ' GMT'); // 10 days
-	if ( $image_file )
-		header('Content-Length: ' . filesize($image_file));
-
-	imagepng($image);
-	imagedestroy($image);
-
-	if ( $exit )
-		exit;
 }
 
 if ( !function_exists('wp_mkdir_p') ) :
@@ -338,9 +312,7 @@ function wp_mkdir_p($target) {
 endif;
 
 // In WordPress, __() is used for gettext.  If not available, just return the string.
-if ( !function_exists('__') ) :
-function __($a) { return $a; }
-endif;
+if ( !function_exists('__') ) { function __($a) { return $a; } }
 
 // In WordPress, this class is used to pass errors between functions.  If not available, recreate in simplest possible form.
 if ( !class_exists('WP_Error') ) :
