@@ -60,7 +60,11 @@ class WP_LaTeX {
 			'background' => 'ffffff',
 		), $_atts );
 	
-		$latex = str_replace(array('&lt;', '&gt;', '&quot;', '&#039;', '&#038;', '&amp;', "\n", "\r"), array('<', '>', '"', "'", '&', '&', ' ', ' '), $latex);
+		$latex = str_replace(
+			array( '&lt;', '&gt;', '&quot;', '&#8220;', '&#8221;', '&#039;', '&#8125;', '&#8127;', '&#8217;', '&#038;', '&amp;', "\n", "\r", "\xa0" ),
+			array( '<',    '>',    '"',      '``',       "''",     "'",      "'",       "'",       "'",       '&',      '&',     ' ',  ' ',  ' ' ),
+			$latex
+		);
 
 		$latex_object = $this->latex( $latex, $atts['background'], $atts['color'], $atts['size'] );
 
@@ -87,7 +91,7 @@ class WP_LaTeX {
 			$color = empty( $this->options['color'] ) ? '000000' : $this->options['color'];
 
 		require_once( dirname( __FILE__ ) . "/automattic-latex-{$this->methods[$this->options['method']]}.php" );
-		$latex_object = new $this->options['method']( $latex, $background, $color, $size, WP_CONTENT_DIR, WP_CONTENT_URL );
+		$latex_object = new $this->options['method']( $latex, $background, $color, $size, WP_CONTENT_DIR . '/latex', WP_CONTENT_URL . '/latex' );
 		if ( isset( $this->options['force_math_mode'] ) )
 			$latex_object->force_math_mode( $this->options['force_math_mode'] );
 		if ( isset( $this->options['wrapper'] ) )
@@ -107,18 +111,18 @@ class WP_LaTeX {
 	function inline_to_shortcode_callback( $matches ) {
 		$r = "[latex";
 
-		if ( preg_match( '/.+((?:&#038;|&amp;)s=-?[0-4]).*/i', $matches[1], $s_matches ) ) {
-			$r .= ' size="' . (int) substr($s_matches[1], 3) . '"';
+		if ( preg_match( '/.+((?:&#038;|&amp;)s=(-?[0-4])).*/i', $matches[1], $s_matches ) ) {
+			$r .= ' size="' . (int) $s_matches[2] . '"';
 			$matches[1] = str_replace( $s_matches[1], '', $matches[1] );
 		}
 
-		if ( preg_match( '/.+((?:&#038;|&amp;)fg=[0-9a-f]{6}).*/i', $matches[1], $fg_matches ) ) {
-			$r .= ' color="' . substr($fg_matches[1], 4) . '"';
+		if ( preg_match( '/.+((?:&#038;|&amp;)fg=([0-9a-f]{6})).*/i', $matches[1], $fg_matches ) ) {
+			$r .= ' color="' . $fg_matches[2] . '"';
 			$matches[1] = str_replace( $fg_matches[1], '', $matches[1] );
 		}
 	
-		if ( preg_match( '/.+((?:&#038;|&amp;)bg=[0-9a-f]{6}).*/i', $matches[1], $bg_matches ) ) {
-			$r .= ' background="' . substr($bg_matches[1], 4) . '"';
+		if ( preg_match( '/.+((?:&#038;|&amp;)bg=([0-9a-f]{6})).*/i', $matches[1], $bg_matches ) ) {
+			$r .= ' background="' . $bg_matches[2] . '"';
 			$matches[1] = str_replace( $bg_matches[1], '', $matches[1] );
 		}
 

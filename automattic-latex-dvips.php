@@ -11,7 +11,7 @@ AUTOMATTIC_LATEX_DVIPS_PATH
 AUTOMATTIC_LATEX_CONVERT_PATH
 */
 
-require_once( dirname( __FILE__ ) . '/automattic-latex-dvipng.php' ) );
+require_once( dirname( __FILE__ ) . '/automattic-latex-dvipng.php' );
 
 class Automattic_Latex_DVIPS extends Automattic_Latex_DVIPNG {
 	function dvipng( $png_file ) {

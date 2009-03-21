@@ -16,7 +16,7 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 		$hook = add_options_page( 'WP LaTeX', 'WP LaTeX', 'manage_options', 'wp-latex', array( &$this, 'admin_page' ) );
 		add_action( "load-$hook", array( &$this, 'admin_page_load' ) );
 
-		if ( !is_writable(ABSPATH . 'wp-content/latex') )
+		if ( 'Automattic_Latex_WPCOM' != $this->options['method'] && !is_writable( WP_CONTENT_DIR . '/latex' ) )
 			add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-chmod\' class=\'error fade\'><p><code>wp-content/latex/</code> must be writeable for WP LaTeX to work.</p></div>";') );
 		if ( !empty( $this->options['activated'] ) ) {
 			add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-config\' class=\'updated fade\'><p>Make sure to check the <a href=\'options-general.php?page=wp-latex\'>WP LaTeX Options</a>.</p></div>";') );
@@ -126,7 +126,7 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 	
 	// Attempts to use current settings to generate a temporory image (new with every page load)
 	function test_image() {
-		if ( 'Automattic_Latex_WPCOM' != $this->options['method'] && !is_writable( ABSPATH . 'wp-content/latex' ) )
+		if ( 'Automattic_Latex_WPCOM' != $this->options['method'] && !is_writable( WP_CONTENT_DIR . '/latex' ) )
 			return false;
 	
 		if ( is_array( $this->options ) )
@@ -154,16 +154,18 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 		if ( is_wp_error( $url ) ) {
 			$code = $url->get_error_code();
 			if ( false !== strpos( $code, '_exec' ) ) :
+				$message = "<div class='error'>\n";
 				$exec = $url->get_error_data( $code );
 				exec( $exec, $out, $r );
-				$message = "<h4>Command run:</h4>\n";
+				$message .= "<h4>Command run:</h4>\n";
 				$message .= "<div class='pre'><code>$exec</code></div>\n";
 				$out = preg_replace( '/tex_.+?\.log/i', '<strong><a href="' . clean_url( content_url( 'latex/test.log' ) ) . '">test.log</a></strong>', join("\n", $out));
 				$message .= "<h4>Result:</h4>\n";
 				$message .= "<div class='pre'><code>$out</code></div>\n";
-				$message .= "<p>Exit code: $r</p>";
+				$message .= "<p>Exit code: $r</p>\n";
+				$message .= "</div>";
 			else :
-				$message = '<p>' . $url->get_error_message() . "</p>\n";
+				$message = '<div class="error"><p>' . $url->get_error_message() . "</p></div>\n";
 			endif;
 			echo $message;
 		} else {
@@ -211,9 +213,16 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		if ( !current_user_can( 'manage_options' ) )
 			wp_die( __( 'Insufficient LaTeX-fu', 'wp-latex' ) );
 	
-		$latex_object = $this->latex( '\LaTeX' );
-		$default_wrapper = $latex_object->wrapper();
-	
+		$default_wrappers = array();
+		foreach ( $this->methods as $class => $method ) {
+			if ( 'Automattic_Latex_WPCOM' == $class )
+				continue;
+			require_once( dirname( __FILE__ ) . "/automattic-latex-$method.php" );
+			$latex_object = new $class( '\LaTeX' );
+			$default_wrappers[$method] = $latex_object->wrapper();
+		}
+		unset( $class, $method, $latex_object );
+		
 		if ( !is_array( $this->options ) )
 			$this->options = array();
 
@@ -335,11 +344,17 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 			<td>
 				<textarea name='wp_latex[wrapper]' rows='8' cols="50" id='wp-latex-wrapper'><?php echo wp_specialchars( $values['wrapper'] ); ?></textarea>
 				<p><code>%BG_COLOR_RGB%</code> and <code>%FG_COLOR_RGB</code> will be replaced with the RGB color representations of the background and foreground colors, respectively.</p>
-				<hr />
+			</td>
+		</tr>
+	<?php foreach ( $default_wrappers as $method => $default_wrapper ) : ?>
+		<tr class="wp-latex-method wp-latex-method-<?php echo $method; ?>">
+			<th></th>
+			<td>
 				<h4>Leaving the above blank will use the following default preamble.</h4>
 				<div class="pre"><code><?php echo $default_wrapper; ?></code></div>
 			</td>
 		</tr>
+	<?php endforeach; ?>
 	</tbody>
 	</table>
 	

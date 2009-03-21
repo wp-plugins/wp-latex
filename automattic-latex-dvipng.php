@@ -15,7 +15,7 @@ AUTOMATTIC_LATEX_LATEX_PATH
 AUTOMATTIC_LATEX_DVIPNG_PATH
 */
 
-require_once( dirname( __FILE__ ) . '/automattic-latex-wpcom.php' ) );
+require_once( dirname( __FILE__ ) . '/automattic-latex-wpcom.php' );
 
 class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 	var $_blacklist = array(
@@ -149,7 +149,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 	function hash_file() {
 		$hash = md5( $this->latex );
-		return substr($hash, 0, 3) . "/$hash-{$this->bg}{$this->fg}{$this->s}";
+		return substr($hash, 0, 3) . "/$hash-{$this->bg_hex}{$this->fg_hex}{$this->size}";
 	}
 
 	function create_png( $png_file = false ) {
@@ -171,7 +171,9 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 		$latex = $this->wrap();
 
-		if ( !$this->tmp_file = tempnam(null, 'tex_') )
+
+
+		if ( !$this->tmp_file = tempnam( '/tmp', 'tex_' ) ) // Should fall back on system's temp dir if /tmp does not exist
 			return new WP_Error( 'tempnam', __( 'Could not create temporary file.', 'automattic-latex' ) );
 		$dir = dirname($this->tmp_file);
 		$jobname = basename($this->tmp_file);
@@ -203,7 +205,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 			return new WP_Error( 'dvipng_path', __( 'dvipng path not specified.', 'automatti-latex' ) );
 
 		if ( !wp_mkdir_p( dirname($png_file) ) )
-			return new WP_Error( 'mkdir', __( 'Could not create subdirectory', 'automattic-latex' ) );
+			return new WP_Error( 'mkdir', sprintf( __( 'Could not create subdirectory <code>%s</code>.  Check your directory permissions.', 'automattic-latex' ), dirname($png_file) ) );
 
 		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( "$this->tmp_file.dvi" ) . ' -o ' . escapeshellarg( $png_file ) . ' -T tight -D 100';
 		exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
@@ -219,7 +221,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		$string = str_replace(array('%BG_COLOR_RGB%', '%FG_COLOR_RGB%'), array($this->bg_rgb, $this->fg_rgb), $string);
 
 		$string .= "\n\begin{document}\n";
-		if ( $this->latex_size ) $string .= "\begin{{$this->size_latex}}\n";
+		if ( $this->size_latex ) $string .= "\begin{{$this->size_latex}}\n";
 
 		// We add a newline before the latex so that any indentations are all even
 		if ( $this->force_math_mode() )
