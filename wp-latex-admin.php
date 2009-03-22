@@ -255,7 +255,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 			<th scope="row"><?php _e( 'LaTeX generation method', 'wp-latex' ); ?></th>
 			<td>
 				<ul id="wp-latex-method-switch">
-					<li><label for="wp-latex-method-wpcom"><input type="radio" name="wp_latex[method]" id="wp-latex-method-wpcom" value='Automattic_Latex_WPCOM'<?php checked( 'Automattic_Latex_WPCOM', $values['method'] ); ?> /> <?php printf( _c( '%s LaTeX server|WordPress.com LaTeX Server', 'wp-latex' ), '<a href="http://wordpress.com/" target="_blank">WordPress.com</a>' ); ?></label></li>
+					<li><label for="wp-latex-method-wpcom"><input type="radio" name="wp_latex[method]" id="wp-latex-method-wpcom" value='Automattic_Latex_WPCOM'<?php checked( 'Automattic_Latex_WPCOM', $values['method'] ); ?> /> <?php printf( _c( '%s LaTeX server (recommended)|WordPress.com LaTeX Server (recommended)', 'wp-latex' ), '<a href="http://wordpress.com/" target="_blank">WordPress.com</a>' ); ?></label></li>
 					<li><label for="wp-latex-method-dvipng"><input type="radio" name="wp_latex[method]" id="wp-latex-method-dvipng" value='Automattic_Latex_DVIPNG'<?php checked( 'Automattic_Latex_DVIPNG', $values['method'] ); ?> /> <?php _e( 'Local LaTeX installation using <code>dvipng</code>', 'wp-latex' ); ?></label></li>
 					<li><label for="wp-latex-method-dvips"><input type="radio" name="wp_latex[method]" id="wp-latex-method-dvips" value='Automattic_Latex_DVIPS'<?php checked( 'Automattic_Latex_DVIPS', $values['method'] ); ?> /> <?php _e( 'Local LaTeX installation using <code>dvips</code> and <code>convert</code>', 'wp-latex' ); ?></label></li>
 				</ul>

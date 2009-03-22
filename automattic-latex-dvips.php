@@ -1,5 +1,6 @@
 <?php
 /*
+Version: 1.1
 Copyright: Automattic, Inc.
 Copyright: Sidney Markowitz.
 License: GPL2+

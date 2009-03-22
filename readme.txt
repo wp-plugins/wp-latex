@@ -2,8 +2,8 @@
 Contributors: mdawaffe, sidney
 Tags: latex, math, equations
 Stable tag: 0.7
-Requires at least: 2.1
-Tested up to: 2.2
+Requires at least: 2.7
+Tested up to: 2.7.1
 
 WP LaTeX creates PNG images from inline $\LaTeX$ code in your posts and comments.
 
@@ -17,66 +17,94 @@ Wow that sounds nerdy.
 
 == Installation ==
 
-This plugin requires several external programs to be installed and working on your
-server, so installation is bit complicated.  Many hosts will not be able to
-support this plugin.
+This plugin can generate the PNG images either by using [WordPress.com](http://wordpress.com/)'s
+LaTeX server (recommended) or by using the version of LaTeX installed on your webserver
+(LaTeX is not installed on most webservers; this method is recommended for advanced users only).
 
-= Server Requirements =
+= Using WordPress.com's LaTeX Sever (recommended) =
+1. Install and activate this plugin.
+2. That's it :)
+
+= Using Your Local Installation of LaTeX (advanced) =
+If you choose this advanced method, you will need several external programs to be installed and
+working on your webserver, so installation is bit complicated.  Many hosts will not be able to
+support this method.
+
+Server Requirements:
 1. Your server must be running some flavor of Linux, UNIX, or BSD.
 2. You must have a working installation of LaTeX running.  I recommend the
-   `tetex-extra` package availabe to most Linux distributions.
-3. Either `dvipng` or both `dvips` and `convert` must installed as well.  `dvipng` is
-   preferred (provided by the `dvipng` package).
+   `texlive-latex-base` together with the `tetex-math-extra` packages available to most Linux
+   distributions.
+3. Either `dvipng` (provided by the `dvipng` package) or both `dvips` and `convert` (provided by
+   the `dvips` and `imagemagick` or `graphicsmagick` packages, respectively) must installed as
+   well.  `dvipng` is preferred.
 
-= Setup =
-1. Install and activate the [FauxML plugin](http://wordpress.org/extend/plugins/fauxml/).
-2. Create a directory called `/wp-content/latex/` and make it writable by your
+Setup:
+1. Create a directory called `/wp-content/latex/` and make it writable by your
    webserver (chmod 777 will do the trick, but talk to your host to see what they recommend).
-3. Upload all the files included in this plugin to your `/wp-content/plugins/` directory
-   (either directly or in a subdirectory).
-4. Activate the plugin through the 'Plugins' menu in WordPress.
-5. Go to Plugins -> WP LaTeX to configure the plugin.
+2. Install and activate this plugin.
+3. Go to Settings -> WP LaTeX to configure the plugin and test the PNG generation.
 
 == Frequently Asked Questions ==
 
 = How do I add LaTeX to my posts? =
 
-The syntax this plugin uses is reminiscent of LaTeX's inline math mode syntax.
+This plugin uses the [WordPress Shortcode Syntax](http://codex.wordpress.org/Shortcode_API).
+Enter your LaTeX code inside of a `[latex]...[/latex]` shortcode.
 
-If you would have written `$some-code$` in a LaTeX document, just write `$latex some-code$`
-in your WordPress post.
+`
+[latex]e^{\i \pi} + 1 = 0[/latex]
+`
+
+You may alternatively use the following equivalent syntax reminiscent of LaTeX's inline
+math mode syntax.
 
 `
 $latex e^{\i \pi} + 1 = 0$
 `
+
+That is, if you would have written `$some-code$` in a LaTeX document, just
+write `$latex some-code$` in your WordPress post.
 
 = Can I change the color of the images produced? =
 
 Yes.  You can set the default text color and background color of the images in the
 Plugins -> WP LaTeX admin page.
 
-You can also change the color on an image by image basis by specifying `fg` and `bg`
-parameters after the LaTeX code, respectively.  For example:
+You can also change the color on an image by image basis by specifying `color`
+and `background` attributes inside the LaTeX shortcode.  For example:
 
 `
-$latex e^{\i \pi} + 1 = 0&bg=00ff00&fg=ff0000$
+[latex color="ff0000" background="00ff00"]e^{\i \pi} + 1 = 0[/latex]
 `
 
 will produce an image with a bright green background and a bright red foreground color.
 Colors are specified in 6 digit hex notation.
 
+The equivalent "inline" syntax uses `fg` and `bg` parameters after the LaTeX code.
+
+`
+$latex e^{\i \pi} + 1 = 0&bg=00ff00&fg=ff0000$
+`
+
 = Can I change the size of the image? =
 
-You can specify an `s` parameter after the LaTeX code.
+You can specify a `size` attribute in the LaTeX shortcode:
 
 `
-$latex e^{\i \pi} + 1 = 0&s=X$
+[latex size="4"]e^{\i \pi} + 1 = 0[/latex]
 `
 
-Where X goes from -4 to 4 (0 is the default).  These numbers correspond to the following
-LaTeX size commands.
+or, equivalently, an `s` parameter after the LaTeX inline syntax:
 
-	s=	LaTeX size
+`
+$latex e^{\i \pi} + 1 = 0&s=4$
+`
+
+The size can be any integer from -4 to 4 (0 is the default).  These numbers correspond to
+the following LaTeX size commands.
+
+	size=	LaTeX size
 	-4	\tiny
 	-3	\scriptsize
 	-2	\footnotesize
@@ -108,13 +136,17 @@ should probably just use LaTeX.
 * `Could not open TEX file for writing` or `Could not write to TEX file`: You have
   some file permissions problems.  See Intallation instructions.
 
-= Do I really need to install FauxML for WP LaTeX to work? =
-
-Yes.
-
 == Other Plugins ==
 
 [Steve Mayer's LatexRender Plugin](http://sixthform.info/steve/wordpress/index.php?p=13)
 is based on a [LaTeX Rendering Class](http://www.mayer.dial.pipex.com/tex.htm) originally
 written by Benjamin Zeiss.  It's requirements are somewhat different and has a different 
 installation procedure.
+
+== Change Log ==
+
+= 1.1 =
+* Bug Fix: tmpnam() can return an error on some setups when called with a null parameter.
+  Use "/tmp" instead (it should fall back to the system's temp directory). Props Marin Saric.
+* Bug Fix: Additional entity -> ASCII cleaning.  Props Marin Saric.
+* No longer requires the FauxML plugin.
