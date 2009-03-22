@@ -60,8 +60,8 @@ class WP_LaTeX {
 	function shortcode( $_atts, $latex ) {
 		$atts = shortcode_atts( array(
 			'size' => 0,
-			'color' => '000000',
-			'background' => 'ffffff',
+			'color' => false,
+			'background' => false,
 		), $_atts );
 	
 		$latex = str_replace(
@@ -90,9 +90,9 @@ class WP_LaTeX {
 			return false;
 
 		if ( !$background )
-			$background = empty( $this->options['background'] ) ? 'ffffff' : $this->options['background'];
+			$background = empty( $this->options['bg'] ) ? 'ffffff' : $this->options['bg'];
 		if ( !$color )
-			$color = empty( $this->options['color'] ) ? '000000' : $this->options['color'];
+			$color = empty( $this->options['fg'] ) ? '000000' : $this->options['fg'];
 
 		require_once( dirname( __FILE__ ) . "/automattic-latex-{$this->methods[$this->options['method']]}.php" );
 		$latex_object = new $this->options['method']( $latex, $background, $color, $size, WP_CONTENT_DIR . '/latex', WP_CONTENT_URL . '/latex' );

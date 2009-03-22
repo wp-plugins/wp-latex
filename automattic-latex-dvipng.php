@@ -97,7 +97,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 		// For PHP 4
 		if ( version_compare( PHP_VERSION, 5, '<' ) )
-			register_shutdown_function(array(&$this, "__destruct"));
+			register_shutdown_function( array( &$this, '__destruct' ) );
 	}
 
 	function __destruct() {
@@ -150,7 +150,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 	function hash_file() {
 		$hash = md5( $this->latex );
-		return substr($hash, 0, 3) . "/$hash-{$this->bg_hex}{$this->fg_hex}{$this->size}";
+		return substr($hash, 0, 3) . "/$hash-{$this->bg_hex}-{$this->fg_hex}-{$this->size}";
 	}
 
 	function latex2png_file( $png_file = false ) {

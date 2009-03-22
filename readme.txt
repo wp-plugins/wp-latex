@@ -160,7 +160,9 @@ installation procedure.
 == Change Log ==
 
 = 1.2 =
-* Bug Fix: Fix RGB parsing in DVIPNG
+* Bug Fix: RGB parsing in DVIPNG
+* Bug Fix: Hash collisions in file names
+* Big Fix: Default colors never used
 * Support for 3 digit hex codes
 
 = 1.1 =
