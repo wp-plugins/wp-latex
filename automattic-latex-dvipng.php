@@ -108,6 +108,9 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 	function hex2rgb( $color ) {
 		$color = (string) $color;
+		if ( 'transparent' == $color )
+			return false;
+
 		$color = substr(preg_replace('/[^0-9a-f]/i', '', $color), 0, 6);
 		if ( 6 > $l = strlen($color) )
 			$color .= str_repeat('0', 6 - $l );
@@ -207,7 +210,11 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		if ( !wp_mkdir_p( dirname($png_file) ) )
 			return new WP_Error( 'mkdir', sprintf( __( 'Could not create subdirectory <code>%s</code>.  Check your directory permissions.', 'automattic-latex' ), dirname($png_file) ) );
 
-		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( "$this->tmp_file.dvi" ) . ' -o ' . escapeshellarg( $png_file ) . ' -T tight -D 100';
+		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( "$this->tmp_file.dvi" )
+			. ' -o ' . escapeshellarg( $png_file )
+			. ' -bg ' . $this->bg_rgb ? escapeshellarg( $this->bg_rgb ) : 'Transparent'
+			. ' -fg ' . $this->fg_rgb ? escapeshellarg( $this->fg_rgb ) : 'Transparent'
+			. ' -T tight -D 100';
 		exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
 		if ( 0 != $d )
 			return new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );

@@ -27,6 +27,9 @@ class Automattic_Latex_WPCOM {
 	}
 
 	function sanitize_hex( $color ) {
+		if ( 'transparent' == $color )
+			return $color;
+
 		$color = substr( preg_replace( '/[^0-9a-f]/i', '', (string) $color ), 0, 6 );
 		if ( 6 > $l = strlen( $color ) )
 			$color .= str_repeat('0', 6 - $l );

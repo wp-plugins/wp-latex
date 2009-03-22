@@ -35,7 +35,11 @@ class WP_LaTeX {
 		add_filter( 'the_content', array( &$this, 'inline_to_shortcode' ) );
 		add_shortcode( 'latex', array( &$this, 'shortcode' ) );
 
-		// TODO: Add shortcode to comments
+		// This isn't really correct.  This adds all shortcodes to comments, not just LaTeX
+		if ( !has_filter( 'comment_text', 'do_shortcode' ) && $this->options['comments'] ) {
+			add_filter( 'comment_text', array( &$this, 'inline_to_shortcode' ) );
+			add_filter( 'comment_text', 'do_shortcode', 31 );
+		}
 	}
 
 	function wp_head() {

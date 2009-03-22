@@ -26,7 +26,12 @@ class Automattic_Latex_DVIPS extends Automattic_Latex_DVIPNG {
 		if ( 0 != $dps )
 			return new WP_Error( 'dvips_exec', __( 'Cannot create image', 'automattic-latex' ), $dvips_exec );
 
-		$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . ' -units PixelsPerInch -density 100 ' . escapeshellarg( "$this->tmp_file.ps" ) . ' ' . escapeshellarg( $png_file );
+		$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . ' -units PixelsPerInch -density 100 -antialias'
+			. ' -background ' . $this->bg_rgb ? escapeshellarg( "rgb( $this->bg_rgb )" ) : 'transparent'
+			. ' -fill ' . $this->fg_rgb ? escapeshellarg( "rgb( $this->fg_rgb )" ) : 'transparent'
+			. ' -stroke ' . $this->fg_rgb ? escapeshellarg( "rgb( $this->fg_rgb )" ) : 'transparent'
+			. ' ' . escapeshellarg( "$this->tmp_file.ps" )
+			. ' ' . escapeshellarg( $png_file );
 		exec( "$convert_exec > /dev/null 2>&1", $convert_out, $c );
 		if ( 0 != $c )
 			return new WP_Error( 'convert_exec', __( 'Cannot create image', 'automattic-latex' ), $convert_exec );
