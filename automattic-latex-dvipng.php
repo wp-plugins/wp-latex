@@ -109,18 +109,18 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		if ( 'T' == $color )
 			return false;
 
-		$color = substr(preg_replace('/[^0-9a-f]/i', '', $color), 0, 6);
-		if ( 6 > $l = strlen($color) )
+		$color = substr( preg_replace( '/[^0-9a-f]/i', '', $color ), 0, 6 );
+		if ( 6 > $l = strlen( $color ) )
 			$color .= str_repeat('0', 6 - $l );
 
-		$red   = $color{0} . $color{1};
-		$green = $color{2} . $color{3};
-		$blue  = $color{4} . $color{5};
+		$red   = $color[0] . $color[1];
+		$green = $color[2] . $color[3];
+		$blue  = $color[4] . $color[5];
 
 		foreach ( array('red', 'green', 'blue') as $color )
-			$$color = number_format( hexdec(ltrim($$color,'0')) / 255, 3 );
+			$$color = number_format( hexdec( ltrim( $$color, '0' ) ) / 255, 3 );
 
-		return "$red,$green,$blue";
+		return "$red $green $blue";
 	}
 
 	function size_it( $z ) {
@@ -169,7 +169,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		if ( !defined( 'AUTOMATTIC_LATEX_LATEX_PATH' ) || !file_exists( AUTOMATTIC_LATEX_LATEX_PATH ) )
 			return new WP_Error( 'latex_path', __( 'latex path not specified.', 'automatti-latex' ) );
 
-		if ( !$this->latex )
+		if ( 0 == strlen( $this->latex ) )
 			return new WP_Error( 'blank', __( 'No formula provided', 'automattic-latex' ) );
 
 		foreach ( $this->_blacklist as $bad )
@@ -245,7 +245,10 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 			$string .= "\begin{{$this->size_latex}}\n";
 
 		// Force math mode and add a newline before the latex so that any indentations are all even
-		$string .= ( $this->latex == '\LaTeX' || $this->latex == '\TeX' ) ? $this->latex : '$\\\\' . $this->latex . '$';
+		$string .=
+			( '\LaTeX' == $this->latex || '\TeX' == $this->latex || '\AmS' == $this->latex || '\AmS-\TeX' == $this->latex || '\AmS-\LaTeX' == $this->latex )
+			? $this->latex
+			: "\$\\\\[0pt]\n$this->latex\$";
 
 		if ( $this->size_latex )
 			$string .= "\n\end{{$this->size_latex}}";
