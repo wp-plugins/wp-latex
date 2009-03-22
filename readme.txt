@@ -23,7 +23,9 @@ LaTeX server (recommended) or by using the version of LaTeX installed on your we
 
 = Using WordPress.com's LaTeX Sever (recommended) =
 1. Install and activate this plugin.
-2. That's it :)
+2. If you want to allow LaTeX images in your blog's comments in addition to your blog's posts,
+   go to Settings -> WP LaTeX, check the Comments checkbox, and save the settings.
+3. That's it :)
 
 = Using Your Local Installation of LaTeX (advanced) =
 If you choose this advanced method, you will need several external programs to be installed and
@@ -122,6 +124,11 @@ the following LaTeX size commands.
 	4      \huge
 `
 
+= The LaTeX images work, but they don't really fit in with my blog's theme = 
+
+You can adjust the CSS used for the LaTeX images to suit your theme better.  Go to
+Settings -> WP LaTeX and edit the Custom CSS.
+
 = I want to break out of math mode and do some really wild stuff.  How do I do that? =
 
 You can't with this plugin.  WP LaTeX forces you to stay in math mode.  Formatting and
@@ -153,7 +160,7 @@ installation procedure.
 == Change Log ==
 
 = 1.1 =
-* Bug Fix: tmpnam() can return an error on some setups when called with a null parameter.
-  Use "/tmp" instead (it should fall back to the system's temp directory). Props Marin Saric.
+* Bug Fix: `tmpnam()` can return an error on some setups when called with a null parameter.
+  Use `/tmp` instead (it should fall back to the system's temp directory). Props Marin Saric.
 * Bug Fix: Additional entity -> ASCII cleaning.  Props Marin Saric.
 * No longer requires the FauxML plugin.
