@@ -31,17 +31,19 @@ working on your webserver, so installation is bit complicated.  Many hosts will 
 support this method.
 
 Server Requirements:
+
 1. Your server must be running some flavor of Linux, UNIX, or BSD.
-2. You must have a working installation of LaTeX running.  I recommend the
-   `texlive-latex-base` together with the `tetex-math-extra` packages available to most Linux
+2. You must have a working installation of LaTeX running.  I recommend the `texlive-latex-base`
+   package together with the `tetex-math-extra` package.  Both are available to most Linux
    distributions.
 3. Either `dvipng` (provided by the `dvipng` package) or both `dvips` and `convert` (provided by
    the `dvips` and `imagemagick` or `graphicsmagick` packages, respectively) must installed as
    well.  `dvipng` is preferred.
 
 Setup:
-1. Create a directory called `/wp-content/latex/` and make it writable by your
-   webserver (chmod 777 will do the trick, but talk to your host to see what they recommend).
+
+1. Create a subdirectory called `latex/` in your `wp-content/` directory and make it writable by
+   your webserver (chmod 777 will do the trick, but talk to your host to see what they recommend).
 2. Install and activate this plugin.
 3. Go to Settings -> WP LaTeX to configure the plugin and test the PNG generation.
 
@@ -66,12 +68,15 @@ $latex e^{\i \pi} + 1 = 0$
 That is, if you would have written `$some-code$` in a LaTeX document, just
 write `$latex some-code$` in your WordPress post.
 
+For the curious, the shortcode syntax is slightly faster for WordPress to process, but the
+inline syntax is a little easier for us humans to read.  Pick your poison.
+
 = Can I change the color of the images produced? =
 
 Yes.  You can set the default text color and background color of the images in the
 Plugins -> WP LaTeX admin page.
 
-You can also change the color on an image by image basis by specifying `color`
+You can also change the colors on an image by image basis by specifying `color`
 and `background` attributes inside the LaTeX shortcode.  For example:
 
 `
@@ -79,7 +84,7 @@ and `background` attributes inside the LaTeX shortcode.  For example:
 `
 
 will produce an image with a bright green background and a bright red foreground color.
-Colors are specified in 6 digit hex notation.
+Colors are specified in RGB with the standard 6 digit hex notation.
 
 The equivalent "inline" syntax uses `fg` and `bg` parameters after the LaTeX code.
 
@@ -104,16 +109,18 @@ $latex e^{\i \pi} + 1 = 0&s=4$
 The size can be any integer from -4 to 4 (0 is the default).  These numbers correspond to
 the following LaTeX size commands.
 
-	size=	LaTeX size
-	-4	\tiny
-	-3	\scriptsize
-	-2	\footnotesize
-	-1	\small
-	0	\normalsize (12pt)
-	1	\large
-	2	\Large
-	3	\LARGE
-	4	\huge
+`
+	size = LaTeX size
+	-4     \tiny
+	-3     \scriptsize
+	-2     \footnotesize
+	-1     \small
+	0      \normalsize (12pt)
+	1      \large
+	2      \Large
+	3      \LARGE
+	4      \huge
+`
 
 = I want to break out of math mode and do some really wild stuff.  How do I do that? =
 
