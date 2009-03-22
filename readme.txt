@@ -27,7 +27,7 @@ LaTeX server (recommended) or by using the version of LaTeX installed on your we
    go to Settings -> WP LaTeX, check the Comments checkbox, and save the settings.
 3. That's it :)
 
-= Using Your Local Installation of LaTeX (advanced) =
+= Using Your Server's Installation of LaTeX (advanced) =
 If you choose this advanced method, you will need several external programs to be installed and
 working on your webserver, so installation is bit complicated.  Many hosts will not be able to
 support this method.
