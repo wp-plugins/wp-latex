@@ -3,7 +3,7 @@
 Plugin Name: WP LaTeX
 Plugin URI: http://automattic.com/code/
 Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.
-Version: 1.2-alpha
+Version: 1.2
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
 
