@@ -15,16 +15,29 @@ AUTOMATTIC_LATEX_CONVERT_PATH
 require_once( dirname( __FILE__ ) . '/automattic-latex-dvipng.php' );
 
 class Automattic_Latex_DVIPS extends Automattic_Latex_DVIPNG {
-	function dvipng( $png_file ) {
-		if ( ( !defined('AUTOMATTIC_LATEX_DVIPS_PATH') || !file_exists(AUTOMATTIC_LATEX_DVIPS_PATH) ) || ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) ) )
-			return new WP_Error( 'dvips', __( 'dvips path not specified.', 'automattic-latex' ) );
-		if ( !defined('AUTOMATTIC_LATEX_CONVERT_PATH') || !file_exists(AUTOMATTIC_LATEX_CONVERT_PATH) )
-			return new WP_Error( 'convert', __( 'convert path not specified.', 'automattic-latex' ) );
+	function dvi_file2ps_file( $dvi_file ) {
+		if ( !defined( 'AUTOMATTIC_LATEX_DVIPS_PATH' ) || !file_exists( AUTOMATTIC_LATEX_DVIPS_PATH ) )
+			return new WP_Error( 'dvips_path', __( 'dvips path not specified.', 'automattic-latex' ) );
+		
+		$ps_file = preg_replace( '/[.]dvi$/', '', $dvi_file ) . '.ps';
 
-		$dvips_exec = AUTOMATTIC_LATEX_DVIPS_PATH . ' -D 100 -E ' . escapeshellarg( "$this->tmp_file.dvi" ) . ' -o ' . escapeshellarg( "$this->tmp_file.ps" );
+		$dvips_exec = AUTOMATTIC_LATEX_DVIPS_PATH . ' -D 100 -E ' . escapeshellarg( $dvi_file ) . ' -o ' . escapeshellarg( $ps_file );
 		exec( "$dvips_exec > /dev/null 2>&1", $dvips_out, $dps );
 		if ( 0 != $dps )
 			return new WP_Error( 'dvips_exec', __( 'Cannot create image', 'automattic-latex' ), $dvips_exec );
+
+		return $ps_file;
+	}
+
+	function ps_file2png_file( $ps_file, $png_file = false ) {
+		if ( !defined( 'AUTOMATTIC_LATEX_CONVERT_PATH' ) || !file_exists( AUTOMATTIC_LATEX_CONVERT_PATH ) )
+			return new WP_Error( 'convert_path', __( 'convert path not specified.', 'automattic-latex' ) );
+
+		if ( !$png_file )
+			$png_file = preg_replace( '/[.]ps$/', '', $ps_file ) . '.png';
+
+		if ( !wp_mkdir_p( dirname( $png_file ) ) )
+			return new WP_Error( 'mkdir', sprintf( __( 'Could not create subdirectory <code>%s</code>.  Check your directory permissions.', 'automattic-latex' ), dirname( $png_file ) ) );
 
 		// convert -density 100 -flatten test.ps -size 1x2 gradient:red-green -fx 'v.p{0,0}*u+v.p{0,1}*(1-u)' test.png
 		// convert -density 100 test.ps -size 1x1 xc:red -fx '1-(1-v.p{0,0})*(1-u)' test.png
@@ -61,10 +74,18 @@ class Automattic_Latex_DVIPS extends Automattic_Latex_DVIPNG {
 		return $png_file;
 	}
 
+	function dvi_file2png_file( $dvi_file, $png_file = false ) {
+		$ps_file = $this->dvi_file2ps_file( $dvi_file );
+		if ( is_wp_error( $ps_file ) )
+			return $ps_file;
+
+		return $this->ps_file2png_file( $ps_file, $png_file );
+	}
+
 	function unlink_tmp_files() {
 		if ( !parent::unlink_tmp_files() )
 			return false;
 
-		@unlink( "$this->tmp_file.dvi" );
+		@unlink( "$this->tmp_file.ps" );
 	}
 }

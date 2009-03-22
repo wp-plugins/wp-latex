@@ -75,7 +75,6 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 	// Really should be called $preamble.
 	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\pagestyle{empty}";
-	var $force = true;
 
 	var $tmp_file;
 	var $png_path_base;
@@ -154,7 +153,19 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		return substr($hash, 0, 3) . "/$hash-{$this->bg_hex}{$this->fg_hex}{$this->size}";
 	}
 
-	function create_png( $png_file = false ) {
+	function latex2png_file( $png_file = false ) {
+		$tex_file = $this->latex2tex_file();
+		if ( is_wp_error( $tex_file ) )
+			return $tex_file;
+
+		$dvi_file = $this->tex_file2dvi_file( $tex_file );
+		if ( is_wp_error( $dvi_file ) )
+			return $dvi_file;
+
+		return $this->dvi_file2png_file( $dvi_file, $png_file );
+	}
+
+	function latex2tex_file() {
 		if ( !defined( 'AUTOMATTIC_LATEX_LATEX_PATH' ) || !file_exists( AUTOMATTIC_LATEX_LATEX_PATH ) )
 			return new WP_Error( 'latex_path', __( 'latex path not specified.', 'automatti-latex' ) );
 
@@ -165,7 +176,8 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 			if ( stristr($this->latex, $bad) )
 				return new WP_Error( 'blacklist', __( 'Formula Invalid', 'automattic-latex' ) );
 
-		if ( $this->force && preg_match('/(^|[^\\\\])\$/', $this->latex) )
+		// Force math mode
+		if ( preg_match('/(^|[^\\\\])\$/', $this->latex) )
 			return new WP_Error( 'mathmode', __( 'You must stay in inline math mode', 'automattic-latex' ) );
 
 		if ( 2000 < strlen($latex) )
@@ -175,8 +187,6 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 		if ( !$this->tmp_file = tempnam( '/tmp', 'tex_' ) ) // Should fall back on system's temp dir if /tmp does not exist
 			return new WP_Error( 'tempnam', __( 'Could not create temporary file.', 'automattic-latex' ) );
-		$dir = dirname($this->tmp_file);
-		$jobname = basename($this->tmp_file);
 
 		if ( !$f = @fopen( $this->tmp_file, 'w' ) )
 			return new WP_Error( 'fopen', __( 'Could not open TEX file for writing', 'automattic-latex' ) );
@@ -184,31 +194,37 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 			return new WP_Error( 'fwrite', __( 'Could not write to TEX file', 'automattic-latex' ) );
 		fclose($f);
 
-		putenv("TEXMFOUTPUT=$dir");
+		return $this->tmp_file;
+	}
+
+	function tex_file2dvi_file( $tex_file ) {
+		$dir = dirname( $tex_file );
+		$jobname = basename( $tex_file );
+
+		putenv( "TEXMFOUTPUT=$dir" );
 		exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --halt-on-error --version > /dev/null 2>&1', $latex_test, $v );
 		$haltopt = $v ? '' : ' --halt-on-error';
 		exec( AUTOMATTIC_LATEX_LATEX_PATH . ' --jobname foo --version < /dev/null >/dev/null 2>&1', $latex_test, $v );
-		$jobopt = $v ? '' : ' --jobname ' . escapeshellarg( "$jobname" );
-		$latex_exec = "cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$haltopt --interaction nonstopmode $jobopt " . escapeshellarg( "$this->tmp_file" );
+		$jobopt = $v ? '' : ' --jobname ' . escapeshellarg( $jobname );
+		$latex_exec = "cd $dir; " . AUTOMATTIC_LATEX_LATEX_PATH . "$haltopt --interaction nonstopmode $jobopt " . escapeshellarg( $this->tmp_file );
 		exec( "$latex_exec > /dev/null 2>&1", $latex_out, $l );
 		if ( 0 != $l )
 			return new WP_Error( 'latex_exec', __( 'Formula does not parse', 'automattic-latex' ), $latex_exec );
 
-		if ( !$png_file )
-			$png_file = "$this->tmp_file.png";
-
-		return $this->dvipng( $png_file );
+		return "$tex_file.dvi";
 	}
 
-	function dvipng( $png_file ) {
-		if ( !defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) || !file_exists(AUTOMATTIC_LATEX_DVIPNG_PATH) )
+	function dvi_file2png_file( $dvi_file, $png_file = false ) {
+		if ( !defined( 'AUTOMATTIC_LATEX_DVIPNG_PATH' ) || !file_exists( AUTOMATTIC_LATEX_DVIPNG_PATH ) )
 			return new WP_Error( 'dvipng_path', __( 'dvipng path not specified.', 'automatti-latex' ) );
 
-		if ( !wp_mkdir_p( dirname($png_file) ) )
-			return new WP_Error( 'mkdir', sprintf( __( 'Could not create subdirectory <code>%s</code>.  Check your directory permissions.', 'automattic-latex' ), dirname($png_file) ) );
+		if ( !$png_file )
+			$png_file = preg_replace( '/[.]dvi$/', '', $dvi_file ) . '.png';
 
+		if ( !wp_mkdir_p( dirname( $png_file ) ) )
+			return new WP_Error( 'mkdir', sprintf( __( 'Could not create subdirectory <code>%s</code>.  Check your directory permissions.', 'automattic-latex' ), dirname( $png_file ) ) );
 
-		$dvipng_exec  = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( "$this->tmp_file.dvi" )
+		$dvipng_exec  = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( $dvi_file )
 			. ' -o ' . escapeshellarg( $png_file )
 			. ' -bg ' . ( $this->bg_rgb ? escapeshellarg( "rgb $this->bg_rgb" ) : 'Transparent' )
 			. ' -fg ' . ( $this->fg_rgb ? escapeshellarg( "rgb $this->fg_rgb" ) : "'rgb 0 0 0'" )
@@ -225,15 +241,14 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		$string  = $this->wrapper();
 
 		$string .= "\n\begin{document}\n";
-		if ( $this->size_latex ) $string .= "\begin{{$this->size_latex}}\n";
+		if ( $this->size_latex )
+			$string .= "\begin{{$this->size_latex}}\n";
 
-		// We add a newline before the latex so that any indentations are all even
-		if ( $this->force_math_mode() )
-			$string .= $this->latex == '\LaTeX' || $this->latex == '\TeX' ? $this->latex : '$\\\\' . $this->latex . '$';
-		else
-			$string .= $this->latex;
+		// Force math mode and add a newline before the latex so that any indentations are all even
+		$string .= ( $this->latex == '\LaTeX' || $this->latex == '\TeX' ) ? $this->latex : '$\\\\' . $this->latex . '$';
 
-		if ( $this->size_latex ) $string .= "\n\end{{$this->size_latex}}";
+		if ( $this->size_latex )
+			$string .= "\n\end{{$this->size_latex}}";
 		$string .= "\n\end{document}";
 		return $string;
 	}
@@ -248,16 +263,10 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		@unlink( $this->tmp_file );
 		@unlink( "$this->tmp_file.aux" );
 		@unlink( "$this->tmp_file.log" );
-		@unlink( "$this->tmp_file.ps" );
+		@unlink( "$this->tmp_file.dvi" );
 		@unlink( "$this->tmp_file.png" );
 
 		return true;
-	}
-        
-	function force_math_mode( $force = null ) {
-		if ( !is_null($force) )
-			$this->force = (bool) $force;
-		return $this->force;
 	}
 
 	function wrapper( $wrapper = false ) {
@@ -275,7 +284,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		$hash = $this->hash_file();
 
 		if ( !file_exists( "$this->png_path_base/$hash.png" ) ) {
-			$file = $this->create_png( "$this->png_path_base/$hash.png" );
+			$file = $this->latex2png_file( "$this->png_path_base/$hash.png" );
 			if ( is_wp_error( $file ) ) {
 				$this->error =& $file;
 				return $this->error;

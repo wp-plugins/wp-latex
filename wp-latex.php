@@ -96,8 +96,6 @@ class WP_LaTeX {
 
 		require_once( dirname( __FILE__ ) . "/automattic-latex-{$this->methods[$this->options['method']]}.php" );
 		$latex_object = new $this->options['method']( $latex, $background, $color, $size, WP_CONTENT_DIR . '/latex', WP_CONTENT_URL . '/latex' );
-		if ( isset( $this->options['force_math_mode'] ) )
-			$latex_object->force_math_mode( $this->options['force_math_mode'] );
 		if ( isset( $this->options['wrapper'] ) )
 			$latex_object->wrapper( $this->options['wrapper'] );
 		$latex_object->url();

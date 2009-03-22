@@ -35,8 +35,6 @@ class Automattic_Latex_WPCOM {
 			$color .= str_repeat('0', 6 - $l );
 		return $color;
 	}
-        
-	function force_math_mode( $force = null ) {}
 
 	function wrapper( $wrapper = false ) {}
 

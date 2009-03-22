@@ -80,9 +80,6 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 	
 		$comments = intval( $new['comments'] != 0 );
 	
-		// Require force_math_mode to be on.
-		$force_math_mode = 1;
-	
 		if ( isset( $new['css'] ) ) {
 			$css = str_replace( array( "\n", "\r" ), "\n", $new['css'] );
 			$css = trim( preg_replace( '/[\n]+/', "\n", $css ) );
@@ -129,7 +126,7 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 				$convert_path = $new['convert_path'];
 		}
 	
-		$this->options = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'dvips_path', 'convert_path', 'force_math_mode', 'wrapper', 'method' );
+		$this->options = compact( 'bg', 'fg', 'comments', 'css', 'latex_path', 'dvipng_path', 'dvips_path', 'convert_path', 'wrapper', 'method' );
 		update_option( 'wp_latex', $this->options );
 		return !count( $this->errors->get_error_codes() );
 	}
@@ -415,11 +412,9 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		if ( empty( $wrapper ) )
 			$wrapper = false;
 	
-		$force_math_mode = 1;
-
 		$activated = true;
 
-		$this->options = compact( 'bg', 'fg', 'method', 'comments', 'css', 'latex_path', 'dvipng_path', 'dvips_path', 'convert_path', 'wrapper', 'force_math_mode', 'activated' );
+		$this->options = compact( 'bg', 'fg', 'method', 'comments', 'css', 'latex_path', 'dvipng_path', 'dvips_path', 'convert_path', 'wrapper', 'activated' );
 		update_option( 'wp_latex', $this->options );
 	}
 }
