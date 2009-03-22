@@ -26,12 +26,34 @@ class Automattic_Latex_DVIPS extends Automattic_Latex_DVIPNG {
 		if ( 0 != $dps )
 			return new WP_Error( 'dvips_exec', __( 'Cannot create image', 'automattic-latex' ), $dvips_exec );
 
-		$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . ' -units PixelsPerInch -density 100 -antialias'
-			. ' -background ' . $this->bg_rgb ? escapeshellarg( "rgb( $this->bg_rgb )" ) : 'transparent'
-			. ' -fill ' . $this->fg_rgb ? escapeshellarg( "rgb( $this->fg_rgb )" ) : 'transparent'
-			. ' -stroke ' . $this->fg_rgb ? escapeshellarg( "rgb( $this->fg_rgb )" ) : 'transparent'
-			. ' ' . escapeshellarg( "$this->tmp_file.ps" )
-			. ' ' . escapeshellarg( $png_file );
+		// convert -density 100 -flatten test.ps -size 1x2 gradient:red-green -fx 'v.p{0,0}*u+v.p{0,1}*(1-u)' test.png
+		// convert -density 100 test.ps -size 1x1 xc:red -fx '1-(1-v.p{0,0})*(1-u)' test.png
+
+		if ( 'T' == $this->fg_hex )
+			$this->fg_hex = '000000';
+
+		$convert_exec = AUTOMATTIC_LATEX_CONVERT_PATH . ' -units PixelsPerInch -density 100 ';
+		if ( 'T' != $this->bg_hex )
+			$convert_exec .= '-flatten ';
+		$convert_exec .= escapeshellarg( "$this->tmp_file.ps" );
+
+		if ( 'T' == $this->bg_hex ) {
+			if ( '000000' != $this->fg_hex ) {
+				$convert_exec .= " -size 1x1 xc:#$this->fg_hex -fx '1-(1-v.p{0,0})*(1-u)'";
+			}
+		} else {
+			if ( '000000' == $this->fg_hex && 'ffffff' == $this->bg_hex ) { // [sic]
+			} elseif ( '000000' == $this->fg_hex ) {
+				$convert_exec .= " -size 1x1 xc:#$this->bg_hex -fx 'u*v.p{0,0}'";
+			} elseif ( 'ffffff' == $this->bg_hex ) {
+				$convert_exec .= " -size 1x1 xc:#$this->fg_hex -fx '1-(1-v.p{0,0})*(1-u)'";
+			} else {
+				$convert_exec .= " -size 1x2 gradient:#$this->bg_hex-#$this->fg_hex -fx 'v.p{0,0}*u+v.p{0,1}*(1-u)'";
+			}
+		}
+
+		$convert_exec .= ' ' . escapeshellarg( $png_file );
+
 		exec( "$convert_exec > /dev/null 2>&1", $convert_out, $c );
 		if ( 0 != $c )
 			return new WP_Error( 'convert_exec', __( 'Cannot create image', 'automattic-latex' ), $convert_exec );
@@ -46,12 +68,3 @@ class Automattic_Latex_DVIPS extends Automattic_Latex_DVIPNG {
 		@unlink( "$this->tmp_file.dvi" );
 	}
 }
-
-/*
-		$gs_exec = "/usr/bin/gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -r100 -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$png_file $this->tmp_file.ps";
-		exec( "$gs_exec > /dev/null 2>&1", $gs_out, $g );
-		if ( 0 != $g )
-			$r = new WP_Error( 'gs_exec', __( 'Cannot create image', 'automattic-latex' ), $gs_exec );
-
-		return $png_file;
-*/

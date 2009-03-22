@@ -31,9 +31,12 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 	
 		add_action( 'admin_head', array( &$this, 'admin_head' ) );
 
-		if ( empty( $_POST['wp_latex'] ) )
+		if ( empty( $_POST['wp_latex'] ) ) {
+			if ( $this->options['wrapper'] && ( false !== strpos( $this->options['wrapper'], '%BG_COLOR_RGB%' ) || false !== strpos( $this->options['wrapper'], '%FG_COLOR_RGB%' ) ) )
+				$this->errors->add( 'wrapper', __( 'WP LaTeX no longer supports ><code>%BG_COLOR_RGB%</code> or <code>%FG_COLOR_RGB</code> in the LaTeX preamble.  Please remove them.' ), $this->options['wrapper'] );
 			return;
-	
+		}
+
 		check_admin_referer( 'wp-latex' );
 	
 		if ( $this->update( stripslashes_deep( $_POST['wp_latex'] ) ) ) {
@@ -64,10 +67,14 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 		}
 	
 		if ( isset( $new['bg'] ) ) {
-			$bg = substr( preg_replace( '/[^0-9a-f]/i', '', $new['bg'] ), 0, 6 );
-			if ( 6 > $l = strlen( $bg ) ) {
-				$this->errors->add( 'bg', __( 'Invalid background color', 'wp-latex' ), $new['bg'] );
-				$bg .= str_repeat( '0', 6 - $l );
+			if ( 'transparent' == trim( $new['bg'] ) ) {
+				$bg = 'transparent';
+			} else {
+				$bg = substr( preg_replace( '/[^0-9a-f]/i', '', $new['bg'] ), 0, 6 );
+				if ( 6 > $l = strlen( $bg ) ) {
+					$this->errors->add( 'bg', __( 'Invalid background color', 'wp-latex' ), $new['bg'] );
+					$bg .= str_repeat( '0', 6 - $l );
+				}
 			}
 		}
 	
@@ -85,7 +92,10 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 			$wrapper = str_replace( array("\n", "\r"), "\n", $new['wrapper'] );
 			if ( !$wrapper = trim( preg_replace('/[\n]+/', "\n", $new['wrapper'] ) ) )
 				$wrapper = false;
+
 		}
+		if ( $wrapper && ( false !== strpos( $wrapper, '%BG_COLOR_RGB%' ) || false !== strpos( $wrapper, '%FG_COLOR_RGB%' ) ) )
+			$this->errors->add( 'wrapper', __( 'WP LaTeX no longer supports ><code>%BG_COLOR_RGB%</code> or <code>%FG_COLOR_RGB</code> in the LaTeX preamble.  Please remove them.' ), $new['wrapper'] );
 	
 		if ( isset( $new['latex_path'] ) ) {
 			$new['latex_path'] = trim( $new['latex_path'] );
@@ -171,7 +181,7 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 		} else {
 			if ( !empty( $latex_object->file ) ) {
 				exec( 'mv ' . escapeshellarg( "$latex_object->file" ) . ' ' . WP_CONTENT_DIR . '/latex/test.png' );
-				$url = content_url( 'latex/test.png' );
+				$url = content_url( 'latex/test.png' ) . "?" . mt_rand();
 			}
 			@unlink( WP_CONTENT_DIR . '/latex/test.log' );
 			echo "<img src='" . clean_url( $url ) . "' alt='Test Image' title='If you can see a big integral, all is well.' style='display: block; margin: 0 auto;' />\n";
@@ -315,14 +325,14 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 			<th scope="row"><label for="wp-latex-fg"><?php _e( 'Default text color', 'wp-latex' ); ?></label></th>
 			<td>
 				<input type='text' name='wp_latex[fg]' value='<?php echo attribute_escape( $values['fg'] ); ?>' id='wp-latex-fg' />
-				<?php _e( 'A six digit hexadecimal number like <code>000000</code>' ); ?>
+				<?php _e( 'A six digit hexadecimal number like <code>000000</code> or <code>ffffff</code>' ); ?>
 			</td>
 		</tr>
 		<tr<?php if ( in_array( 'bg', $errors ) ) echo ' class="form-invalid"'; ?>>
 			<th scope="row"><label for="wp-latex-bg"><?php _e( 'Default background color', 'wp-latex' ); ?></label></th>
 			<td>
 				<input type='text' name='wp_latex[bg]' value='<?php echo attribute_escape( $values['bg'] ); ?>' id='wp-latex-bg' />
-				<?php _e( 'A six digit hexadecimal number like <code>ffffff</code>' ); ?>
+				<?php _e( 'A six digit hexadecimal number like <code>000000</code> or <code>ffffff</code>, or <code>transparent</code>' ); ?>
 			</td>
 		</tr>
 		<tr>
@@ -339,11 +349,10 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 			</td>
 		</tr>
 
-		<tr class="wp-latex-method wp-latex-method-dvipng wp-latex-method-dvips">
+		<tr class="wp-latex-method wp-latex-method-dvipng wp-latex-method-dvips<?php if ( in_array( 'wrapper', $errors ) ) echo ' form-invalid	'; ?>">
 			<th scope="row"><label for="wp-latex-wrapper"><?php _e( 'LaTeX Preamble', 'wp-latex' ); ?></label></th>
 			<td>
 				<textarea name='wp_latex[wrapper]' rows='8' cols="50" id='wp-latex-wrapper'><?php echo wp_specialchars( $values['wrapper'] ); ?></textarea>
-				<p><code>%BG_COLOR_RGB%</code> and <code>%FG_COLOR_RGB</code> will be replaced with the RGB color representations of the background and foreground colors, respectively.</p>
 			</td>
 		</tr>
 	<?php foreach ( $default_wrappers as $method => $default_wrapper ) : ?>

@@ -74,8 +74,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 	var $size_latex;
 
 	// Really should be called $preamble.
-	// %BG_COLOR_RGB% and %FG_COLOR_RGB% will be replaced with RGB values
-	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\usepackage{color}\n\definecolor{bg}{rgb}{%BG_COLOR_RGB%}\n\definecolor{fg}{rgb}{%FG_COLOR_RGB%}\n\pagecolor{bg}\n\color{fg}\n\pagestyle{empty}";
+	var $wrapper = "\documentclass[12pt]{article}\n\usepackage[latin1]{inputenc}\n\usepackage{amsmath}\n\usepackage{amsfonts}\n\usepackage{amssymb}\n\usepackage[mathscr]{eucal}\n\pagestyle{empty}";
 	var $force = true;
 
 	var $tmp_file;
@@ -91,9 +90,9 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 	function __construct( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0, $png_path_base = null, $png_url_base = null ) {
 		parent::__construct( $latex, $bg_hex, $fg_hex, $size );
+		$this->size_latex = $this->size_it( $this->size );
 		$this->bg_rgb = $this->hex2rgb( $this->bg_hex );
 		$this->fg_rgb = $this->hex2rgb( $this->fg_hex );
-		$this->size_latex = $this->size_it( $this->size );
 		$this->png_path_base = rtrim( $png_path_base, '/\\' );
 		$this->png_url_base = rtrim( $png_url_base, '/\\' );
 
@@ -108,7 +107,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 	function hex2rgb( $color ) {
 		$color = (string) $color;
-		if ( 'transparent' == $color )
+		if ( 'T' == $color )
 			return false;
 
 		$color = substr(preg_replace('/[^0-9a-f]/i', '', $color), 0, 6);
@@ -174,8 +173,6 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 		$latex = $this->wrap();
 
-
-
 		if ( !$this->tmp_file = tempnam( '/tmp', 'tex_' ) ) // Should fall back on system's temp dir if /tmp does not exist
 			return new WP_Error( 'tempnam', __( 'Could not create temporary file.', 'automattic-latex' ) );
 		$dir = dirname($this->tmp_file);
@@ -210,11 +207,13 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		if ( !wp_mkdir_p( dirname($png_file) ) )
 			return new WP_Error( 'mkdir', sprintf( __( 'Could not create subdirectory <code>%s</code>.  Check your directory permissions.', 'automattic-latex' ), dirname($png_file) ) );
 
-		$dvipng_exec = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( "$this->tmp_file.dvi" )
+
+		$dvipng_exec  = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( "$this->tmp_file.dvi" )
 			. ' -o ' . escapeshellarg( $png_file )
-			. ' -bg ' . $this->bg_rgb ? escapeshellarg( $this->bg_rgb ) : 'Transparent'
-			. ' -fg ' . $this->fg_rgb ? escapeshellarg( $this->fg_rgb ) : 'Transparent'
+			. ' -bg ' . ( $this->bg_rgb ? escapeshellarg( "rgb $this->bg_rgb" ) : 'Transparent' )
+			. ' -fg ' . ( $this->fg_rgb ? escapeshellarg( "rgb $this->fg_rgb" ) : "'rgb 0 0 0'" )
 			. ' -T tight -D 100';
+
 		exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
 		if ( 0 != $d )
 			return new WP_Error( 'dvipng_exec', __( 'Cannot create image', 'automattic-latex' ), $dvipng_exec );
@@ -224,8 +223,6 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 
 	function wrap() {
 		$string  = $this->wrapper();
-
-		$string = str_replace(array('%BG_COLOR_RGB%', '%FG_COLOR_RGB%'), array($this->bg_rgb, $this->fg_rgb), $string);
 
 		$string .= "\n\begin{document}\n";
 		if ( $this->size_latex ) $string .= "\begin{{$this->size_latex}}\n";
