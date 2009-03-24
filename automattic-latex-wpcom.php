@@ -15,7 +15,7 @@ class Automattic_Latex_WPCOM {
 
 	var $error;
 
-	function Automattic_Latex( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
+	function Automattic_Latex_WPCOM( $latex, $bg_hex = 'ffffff', $fg_hex = '000000', $size = 0 ) {
 		$this->__construct( $latex, $bg_hex, $fg_hex, $size );
 	}
 

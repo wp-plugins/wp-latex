@@ -181,7 +181,9 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 				$url = content_url( 'latex/test.png' ) . "?" . mt_rand();
 			}
 			@unlink( WP_CONTENT_DIR . '/latex/test.log' );
-			echo "<img src='" . clean_url( $url ) . "' alt='Test Image' title='If you can see a big integral, all is well.' style='display: block; margin: 0 auto;' />\n";
+			$alt = attribute_escape( __( 'Test Image', 'wp-latex' ) );
+			echo "<img class='test-image' src='" . clean_url( $url ) . "' alt='$alt' />\n";
+			echo "<p class='test-image'>" . __( 'If you can see a big integral, all is well.', 'wp-latex' ) . '</p>';
 			$r = true;
 		}
 		return $r;
@@ -202,6 +204,17 @@ jQuery( function($) {
 </script>
 <style type="text/css">
 /* <![CDATA[ */
+p.test-image {
+	text-align: center;
+	font-size: 1.4em;
+}
+img.test-image {
+	display: block;
+	margin: 0 auto 1em;
+}
+.syntax code {
+	white-space: nowrap;
+}
 .wp-latex-method {
 	display: none;
 }
@@ -258,6 +271,15 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 
 	<table class="form-table">
 	<tbody>
+		<?php if ( empty( $errors ) ): ?>
+		<tr>
+			<th scope="row"><?php _e( 'Syntax' ); ?></th>
+			<td class="syntax"><?php printf( __( 'You may use either the shortcode syntax %s<br /> or the &#8220;inline&#8221; syntax %s<br /> to insert LaTeX into your posts.', 'wp-latex' ),
+					'<code>[latex]e^{\i \pi} + 1 = 0[/latex]</code>',
+					'<code>$latex e^{\i \pi} + 1 = 0$</code>'
+			); ?></td>
+		</tr>
+		<?php endif; ?>
 		<tr<?php if ( in_array( 'method', $errors ) ) echo ' class="form-invalid"'; ?>>
 			<th scope="row"><?php _e( 'LaTeX generation method', 'wp-latex' ); ?></th>
 			<td>

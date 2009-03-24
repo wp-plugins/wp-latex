@@ -159,6 +159,10 @@ installation procedure.
 
 == Change Log ==
 
+= 1.3 =
+* Bug Fix: Compatibility with PHP 4
+* Clarify syntax for LaTeX in posts
+
 = 1.2 =
 * Bug Fix: RGB parsing in DVIPNG
 * Bug Fix: Hash collisions in file names
