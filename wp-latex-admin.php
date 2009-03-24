@@ -212,6 +212,9 @@ img.test-image {
 	display: block;
 	margin: 0 auto 1em;
 }
+.syntax p {
+	margin-top: 0;
+}
 .syntax code {
 	white-space: nowrap;
 }
@@ -274,10 +277,13 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		<?php if ( empty( $errors ) ): ?>
 		<tr>
 			<th scope="row"><?php _e( 'Syntax' ); ?></th>
-			<td class="syntax"><?php printf( __( 'You may use either the shortcode syntax %s<br /> or the &#8220;inline&#8221; syntax %s<br /> to insert LaTeX into your posts.', 'wp-latex' ),
+			<td class="syntax">
+				<p><?php printf( __( 'You may use either the shortcode syntax %s<br /> or the &#8220;inline&#8221; syntax %s<br /> to insert LaTeX into your posts.', 'wp-latex' ),
 					'<code>[latex]e^{\i \pi} + 1 = 0[/latex]</code>',
 					'<code>$latex e^{\i \pi} + 1 = 0$</code>'
-			); ?></td>
+				); ?></p>
+				<p><?php _e( 'For more information, see the <a href="http://wordpress.org/extend/plugins/wp-latex/faq/">FAQ</a>' ); ?></p>
+			</td>
 		</tr>
 		<?php endif; ?>
 		<tr<?php if ( in_array( 'method', $errors ) ) echo ' class="form-invalid"'; ?>>
