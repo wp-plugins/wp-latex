@@ -23,8 +23,15 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 			unset( $this->options['activated'] );
 			update_option( 'wp_latex', $this->options );
 		}
+
+		add_filter( 'plugin_action_links_' . plugin_basename( dirname( __FILE__ ) . '/wp-latex.php' ), array( &$this, 'plugin_action_links' ) );
 	}
 	
+	function plugin_action_links( $links ) {
+		array_unshift( $links, '<a href="options-general.php?page=wp-latex">' . __( 'Settings' ) . "</a>" );
+		return $links;
+	}
+
 	function admin_page_load() {
 		if ( !current_user_can( 'manage_options' ) )
 			wp_die( __( 'Insufficient LaTeX-fu', 'wp-latex' ) );
