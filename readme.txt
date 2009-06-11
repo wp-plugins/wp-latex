@@ -159,6 +159,9 @@ installation procedure.
 
 == Change Log ==
 
+= 1.4 =
+* Bug Fix: Typos in PHP4 constructor for Automattic_Latex_DVIPNG
+
 = 1.3 =
 * Bug Fix: Compatibility with PHP 4
 * Clarify syntax for LaTeX in posts
