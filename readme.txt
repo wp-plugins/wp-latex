@@ -159,6 +159,9 @@ installation procedure.
 
 == Change Log ==
 
+= 1.5 =
+* Bug Fix: Minus sign incorrectly parsed. (Fix for WordPress 2.8.)
+
 = 1.4 =
 * Bug Fix: Typos in PHP4 constructor for Automattic_Latex_DVIPNG
 
