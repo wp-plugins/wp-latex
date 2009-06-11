@@ -3,7 +3,7 @@
 Plugin Name: WP LaTeX
 Plugin URI: http://automattic.com/code/
 Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.  Use either [latex]e^{\i \pi} + 1 = 0[/latex] or $latex e^{\i \pi} + 1 = 0$ syntax.
-Version: 1.4-alpha
+Version: 1.5
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
 
@@ -65,8 +65,8 @@ class WP_LaTeX {
 		), $_atts );
 	
 		$latex = str_replace(
-			array( '&lt;', '&gt;', '&quot;', '&#8220;', '&#8221;', '&#039;', '&#8125;', '&#8127;', '&#8217;', '&#038;', '&amp;', "\n", "\r", "\xa0" ),
-			array( '<',    '>',    '"',      '``',       "''",     "'",      "'",       "'",       "'",       '&',      '&',     ' ',  ' ',  ' ' ),
+			array( '&lt;', '&gt;', '&quot;', '&#8220;', '&#8221;', '&#039;', '&#8125;', '&#8127;', '&#8217;', '&#038;', '&amp;', "\n", "\r", "\xa0", '&#8211;' ),
+			array( '<',    '>',    '"',      '``',       "''",     "'",      "'",       "'",       "'",       '&',      '&',     ' ',  ' ',  ' ',    '-' ),
 			$latex
 		);
 

@@ -1,7 +1,7 @@
 === WP LaTeX ===
 Contributors: mdawaffe, sidney
 Tags: latex, math, equations, WordPress.com
-Stable tag: 1.3
+Stable tag: 1.5
 Requires at least: 2.7
 Tested up to: 2.7.1
 
@@ -158,6 +158,9 @@ written by Benjamin Zeiss.  It's requirements are somewhat different and has a d
 installation procedure.
 
 == Change Log ==
+
+= 1.5 =
+* Bug Fix: Minus sign incorrectly parsed. (Fix for WordPress 2.8.)
 
 = 1.4 =
 * Bug Fix: Typos in PHP4 constructor for Automattic_Latex_DVIPNG
