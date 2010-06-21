@@ -3,7 +3,7 @@
 Plugin Name: WP LaTeX
 Plugin URI: http://automattic.com/code/
 Description: Converts inline latex code into PNG images that are displayed in your blog posts and comments.  Use either [latex]e^{\i \pi} + 1 = 0[/latex] or $latex e^{\i \pi} + 1 = 0$ syntax.
-Version: 1.5
+Version: 1.6
 Author: Automattic, Inc.
 Author URI: http://automattic.com/
 
@@ -32,7 +32,7 @@ class WP_LaTeX {
 	
 		add_action( 'wp_head', array( &$this, 'wp_head' ) );
 
-		add_filter( 'the_content', array( &$this, 'inline_to_shortcode' ) );
+		add_filter( 'the_content', array( &$this, 'inline_to_shortcode' ), 8 );
 		add_shortcode( 'latex', array( &$this, 'shortcode' ) );
 
 		// This isn't really correct.  This adds all shortcodes to comments, not just LaTeX
@@ -107,28 +107,28 @@ class WP_LaTeX {
 		if ( false === strpos( $content, '$latex' ) )
 			return $content;
 
-		return preg_replace_callback( '#\$latex[= ](.*?[^\\\\])\$#', array( &$this, 'inline_to_shortcode_callback' ), $content );
+		return preg_replace_callback( '#(\s*)\$latex[= ](.*?[^\\\\])\$(\s*)#', array( &$this, 'inline_to_shortcode_callback' ), $content );
 	}
 
 	function inline_to_shortcode_callback( $matches ) {
-		$r = "[latex";
+		$r = "{$matches[1]}[latex";
 
-		if ( preg_match( '/.+((?:&#038;|&amp;)s=(-?[0-4])).*/i', $matches[1], $s_matches ) ) {
+		if ( preg_match( '/.+((?:&#038;|&amp;)s=(-?[0-4])).*/i', $matches[2], $s_matches ) ) {
 			$r .= ' size="' . (int) $s_matches[2] . '"';
-			$matches[1] = str_replace( $s_matches[1], '', $matches[1] );
+			$matches[2] = str_replace( $s_matches[1], '', $matches[2] );
 		}
 
-		if ( preg_match( '/.+((?:&#038;|&amp;)fg=([0-9a-f]{6})).*/i', $matches[1], $fg_matches ) ) {
+		if ( preg_match( '/.+((?:&#038;|&amp;)fg=([0-9a-f]{6})).*/i', $matches[2], $fg_matches ) ) {
 			$r .= ' color="' . $fg_matches[2] . '"';
-			$matches[1] = str_replace( $fg_matches[1], '', $matches[1] );
+			$matches[2] = str_replace( $fg_matches[1], '', $matches[2] );
 		}
 	
-		if ( preg_match( '/.+((?:&#038;|&amp;)bg=([0-9a-f]{6})).*/i', $matches[1], $bg_matches ) ) {
+		if ( preg_match( '/.+((?:&#038;|&amp;)bg=([0-9a-f]{6})).*/i', $matches[2], $bg_matches ) ) {
 			$r .= ' background="' . $bg_matches[2] . '"';
-			$matches[1] = str_replace( $bg_matches[1], '', $matches[1] );
+			$matches[2] = str_replace( $bg_matches[1], '', $matches[2] );
 		}
 
-		return "$r]{$matches[1]}[/latex]";
+		return "$r]{$matches[2]}[/latex]{$matches[3]}";
 	}
 }
 
