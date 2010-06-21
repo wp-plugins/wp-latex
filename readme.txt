@@ -159,6 +159,10 @@ installation procedure.
 
 == Change Log ==
 
+= 1.7 =
+* Bug Fix: Strip `<p>` and `<br>` from shortcode contents to make multiline LaTeX easier.
+  Only works in shortcode syntax.
+
 = 1.6 =
 * Bug Fix: Make inline and shortcode syntax outputs consistent.
 * Bug Fix: i18n
@@ -187,6 +191,9 @@ installation procedure.
 * No longer requires the FauxML plugin.
 
 == Upgrade Notice ==
+
+= 1.7 =
+Multiline LaTeX is now easier.
 
 = 1.6 =
 Fixes inline syntax output.
