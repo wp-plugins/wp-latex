@@ -17,9 +17,9 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 		add_action( "load-$hook", array( &$this, 'admin_page_load' ) );
 
 		if ( 'Automattic_Latex_WPCOM' != $this->options['method'] && !is_writable( WP_CONTENT_DIR . '/latex' ) )
-			add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-chmod\' class=\'error fade\'><p><code>wp-content/latex/</code> must be writeable for WP LaTeX to work.</p></div>";') );
+			add_action( 'admin_notices', array( &$this, 'not_writeable_error' ) );
 		if ( !empty( $this->options['activated'] ) ) {
-			add_action( 'admin_notices', create_function('$a', 'echo "<div id=\'latex-config\' class=\'updated fade\'><p>Make sure to check the <a href=\'options-general.php?page=wp-latex\'>WP LaTeX Options</a>.</p></div>";') );
+			add_action( 'admin_notices', array( &$this, 'activated_notice' ) );
 			unset( $this->options['activated'] );
 			update_option( 'wp_latex', $this->options );
 		}
@@ -27,6 +27,23 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 		add_filter( 'plugin_action_links_' . plugin_basename( dirname( __FILE__ ) . '/wp-latex.php' ), array( &$this, 'plugin_action_links' ) );
 	}
 	
+	function not_writeable_error() {
+?>
+	<div id="latex-chmod" class="error fade"><p><?php printf(
+		__( '<code>%s</code> must be writeable for WP LaTeX to work.' ),
+		esc_html( WP_CONTENT_DIR . '/latex/' )
+	); ?></p></div>
+<?php
+	}
+
+	function activated_notice() {
+?>
+	<div id="latex-config" class="updated fade"><p><?php printf(
+		__( 'Make sure to check your <a href="%s">WP LaTeX Settings</a>.' ),
+		esc_url( admin_url( 'options-general.php?page=wp-latex' ) )
+	); ?></p></div>
+<?php
+	}
 	function plugin_action_links( $links ) {
 		array_unshift( $links, '<a href="options-general.php?page=wp-latex">' . __( 'Settings' ) . "</a>" );
 		return $links;
