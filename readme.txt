@@ -1,7 +1,7 @@
 === WP LaTeX ===
 Contributors: mdawaffe, sidney, automattic
 Tags: latex, math, equations, WordPress.com
-Stable tag: 1.5
+Stable tag: 1.6
 Requires at least: 2.7
 Tested up to: 3.0
 
@@ -159,6 +159,11 @@ installation procedure.
 
 == Change Log ==
 
+= 1.6 =
+* Bug Fix: Make inline and shortcode syntax outputs consistent.
+* Bug Fix: i18n
+* Bug Fix: "Settings" not "Options"
+
 = 1.5 =
 * Bug Fix: Minus sign incorrectly parsed. (Fix for WordPress 2.8.)
 
@@ -180,3 +185,8 @@ installation procedure.
   Use `/tmp` instead (it should fall back to the system's temp directory). Props Marin Saric.
 * Bug Fix: Additional entity -> ASCII cleaning.  Props Marin Saric.
 * No longer requires the FauxML plugin.
+
+== Upgrade Notice ==
+
+= 1.6 =
+Fixes inline syntax output.
