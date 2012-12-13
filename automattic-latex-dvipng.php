@@ -20,6 +20,9 @@ require_once( dirname( __FILE__ ) . '/automattic-latex-wpcom.php' );
 class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 	var $_blacklist = array(
 		'^^',
+	);
+
+	var $_graylist = array(
 		'afterassignment',
 		'aftergroup',
 		'batchmode',
@@ -175,6 +178,12 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		foreach ( $this->_blacklist as $bad )
 			if ( stristr($this->latex, $bad) )
 				return new WP_Error( 'blacklist', __( 'Formula Invalid', 'automattic-latex' ) );
+
+		foreach ( $this->_graylist as $bad ) {
+			if ( preg_match( "#\\\\" . preg_quote( $bad, '#' ) . '#', $this->latex ) )
+				return new WP_Error( 'graylist', __( 'Formula Invalid', 'automattic-latex' ) );
+			$this->latex = str_replace( $bad, $bad[0] . "\\,\\!" . substr( $bad, 1 ), $this->latex );
+		}
 
 		// Force math mode
 		if ( preg_match('/(^|[^\\\\])\$/', $this->latex) )
