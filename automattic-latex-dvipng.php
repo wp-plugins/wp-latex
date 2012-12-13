@@ -180,7 +180,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		if ( preg_match('/(^|[^\\\\])\$/', $this->latex) )
 			return new WP_Error( 'mathmode', __( 'You must stay in inline math mode', 'automattic-latex' ) );
 
-		if ( 2000 < strlen($latex) )
+		if ( 2000 < strlen( $this->latex ) )
 			return new WP_Error( 'length', __( 'The formula is too long', 'automattic-latex' ) );
 
 		$latex = $this->wrap();
