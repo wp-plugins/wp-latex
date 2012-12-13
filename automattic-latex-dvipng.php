@@ -224,11 +224,14 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		if ( !wp_mkdir_p( dirname( $png_file ) ) )
 			return new WP_Error( 'mkdir', sprintf( __( 'Could not create subdirectory <code>%s</code>.  Check your directory permissions.', 'automattic-latex' ), dirname( $png_file ) ) );
 
+		$output_resolution = round( 100 * $this->zoom );
+
 		$dvipng_exec  = AUTOMATTIC_LATEX_DVIPNG_PATH . ' ' . escapeshellarg( $dvi_file )
 			. ' -o ' . escapeshellarg( $png_file )
 			. ' -bg ' . ( $this->bg_rgb ? escapeshellarg( "rgb $this->bg_rgb" ) : 'Transparent' )
 			. ' -fg ' . ( $this->fg_rgb ? escapeshellarg( "rgb $this->fg_rgb" ) : "'rgb 0 0 0'" )
-			. ' -T tight -D 100';
+			. ' -T tight'
+			. ' -D ' . (int) $output_resolution;
 
 		exec( "$dvipng_exec > /dev/null 2>&1", $dvipng_out, $d );
 		if ( 0 != $d )
