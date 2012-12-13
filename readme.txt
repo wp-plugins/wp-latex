@@ -159,6 +159,13 @@ installation procedure.
 
 == Change Log ==
 
+= 1.8 =
+* Enhancement: Add pixel density support.
+* Enhancement: Make LaTeX sanitation more forgiving.
+* Bug Fix: Fix LaTeX Document generation under PHP 5.4.
+* Bug Fix: Fix formula length limit.
+* Bug Fix: Always use `wp_safe_redirect()` for added security.
+
 = 1.7 =
 * Bug Fix: Strip `<p>` and `<br>` from shortcode contents to make multiline LaTeX easier.
   Only works in shortcode syntax.
@@ -191,6 +198,9 @@ installation procedure.
 * No longer requires the FauxML plugin.
 
 == Upgrade Notice ==
+
+= 1.8 =
+PHP 5.4 Compatibility, better sanitation, and more.
 
 = 1.7 =
 Multiline LaTeX is now easier.
