@@ -240,9 +240,9 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 	function wrap() {
 		$string  = $this->wrapper();
 
-		$string .= "\n\begin{document}\n";
+		$string .= "\n\\begin{document}\n";
 		if ( $this->size_latex )
-			$string .= "\begin{{$this->size_latex}}\n";
+			$string .= "\\begin{{$this->size_latex}}\n";
 
 		// Force math mode and add a newline before the latex so that any indentations are all even
 		$string .=
@@ -251,8 +251,8 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 			: "\$\\\\[0pt]\n$this->latex\$";
 
 		if ( $this->size_latex )
-			$string .= "\n\end{{$this->size_latex}}";
-		$string .= "\n\end{document}";
+			$string .= "\n\\end{{$this->size_latex}}";
+		$string .= "\n\\end{document}";
 		return $string;
 	}
 
