@@ -103,8 +103,17 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 			register_shutdown_function( array( &$this, '__destruct' ) );
 	}
 
+	// Security. Add a flag to protect the Automattic_Latex_DVIPNG destructor from being executed as a result of a unserialize() call with untrusted data.
+	function __wakeup() {
+		$this->__non_serializable_object = true;
+		$class = get_class( $this );
+		trigger_error( sprintf( "Illegal call to unserialize() for object of class '%s'", $class ), E_USER_WARNING );
+	}
+
+
 	function __destruct() {
-		$this->unlink_tmp_files();
+		if ( empty( $this->__non_serializable_object ) )
+			$this->unlink_tmp_files();
 	}
 
 	function hex2rgb( $color ) {
@@ -186,7 +195,14 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		}
 
 		// Force math mode
-		if ( preg_match('/(^|[^\\\\])\$/', $this->latex) )
+		// Dollar sign preceeded by an even number of slashes
+		$ends_inline_math_mode =
+			'/' .
+			'(?<!\\\\)' .      // Not preceded by a single slash
+			'(?:\\\\\\\\)*' .  // Even number of slashes
+			'(?:\$|\\\\\\))' . // Dollar sign "$" or slash-close-paren "\)"
+			'/';
+		if ( preg_match( $ends_inline_math_mode, $this->latex ) )
 			return new WP_Error( 'mathmode', __( 'You must stay in inline math mode', 'automattic-latex' ) );
 
 		if ( 2000 < strlen( $this->latex ) )
@@ -260,7 +276,7 @@ class Automattic_Latex_DVIPNG extends Automattic_Latex_WPCOM {
 		$string .=
 			( '\LaTeX' == $this->latex || '\TeX' == $this->latex || '\AmS' == $this->latex || '\AmS-\TeX' == $this->latex || '\AmS-\LaTeX' == $this->latex )
 			? $this->latex
-			: "\$\\\\[0pt]\n$this->latex\$";
+			: "\$\\\\[0pt]\n$this->latex\n\$";
 
 		if ( $this->size_latex )
 			$string .= "\n\\end{{$this->size_latex}}";
