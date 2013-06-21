@@ -165,6 +165,8 @@ installation procedure.
 * Bug Fix: Fix LaTeX Document generation under PHP 5.4.
 * Bug Fix: Fix formula length limit.
 * Bug Fix: Always use `wp_safe_redirect()` for added security.
+* Bug Fix: Prevent unserialization of objects.
+* Bug Fix: Better prevention of breaking out from mathmode.
 
 = 1.7 =
 * Bug Fix: Strip `<p>` and `<br>` from shortcode contents to make multiline LaTeX easier.
