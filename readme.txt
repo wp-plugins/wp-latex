@@ -1,7 +1,7 @@
 === WP LaTeX ===
 Contributors: mdawaffe, sidney, automattic
 Tags: latex, math, equations, WordPress.com
-Stable tag: 1.9
+Stable tag: 1.9.1
 Requires at least: 3.2
 Tested up to: 4.0
 
@@ -168,6 +168,9 @@ installation procedure.
 
 == Change Log ==
 
+= 1.9.1 =
+* Bug Fix: Fix version number.
+
 = 1.9 =
 * Enhancement: Do not use deprecated WordPress functions.
 * Enhancement: Fix PHP Strict errors.
@@ -213,6 +216,9 @@ installation procedure.
 * No longer requires the FauxML plugin.
 
 == Upgrade Notice ==
+
+= 1.9.1 =
+Fixes PHP Warnings.
 
 = 1.9 =
 Fixes PHP Warnings.
