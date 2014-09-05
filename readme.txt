@@ -168,6 +168,10 @@ installation procedure.
 
 == Change Log ==
 
+= 1.9.3 =
+* Bug Fix: Fix interactions between LaTeX, `wptexturize()`, and `wpautop()`.
+* Bug Fix: Fix specifying size in `$latex$` format.
+
 = 1.9.2 =
 * Bug Fix: Add SSL Support: http://wordpress.org/support/topic/lack-of-https-support
 
