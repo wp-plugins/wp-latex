@@ -168,6 +168,9 @@ installation procedure.
 
 == Change Log ==
 
+= 1.9.2 =
+* Bug Fix: Add SSL Support: http://wordpress.org/support/topic/lack-of-https-support
+
 = 1.9.1 =
 * Bug Fix: Fix version number.
 
@@ -216,6 +219,9 @@ installation procedure.
 * No longer requires the FauxML plugin.
 
 == Upgrade Notice ==
+
+= 1.9.2 =
+Add SSL Support.
 
 = 1.9.1 =
 Fixes PHP Warnings.
