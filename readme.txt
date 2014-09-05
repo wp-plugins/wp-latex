@@ -3,11 +3,16 @@ Contributors: mdawaffe, sidney, automattic
 Tags: latex, math, equations, WordPress.com
 Stable tag: 1.8
 Requires at least: 3.1
-Tested up to: 3.2
+Tested up to: 4.0
 
 WP LaTeX creates PNG images from inline $\LaTeX$ code in your posts and comments.
 
 == Description ==
+
+**NOTE**: For must users, we recommend using [Jetpack](http://jetpack.me/) and
+its [Beautiful Math feature](http://jetpack.me/support/beautiful-math-with-latex/).
+WP LaTeX offers additional control since it allows you to host your own LaTeX
+image server.
 
 Writing equations and formulae is a snap with LaTeX, but really hard on a website.
 No longer.  This plugin combines the power of LaTeX and the simplicity of WordPress
@@ -154,10 +159,18 @@ should probably just use LaTeX.
 
 [Steve Mayer's LatexRender Plugin](http://sixthform.info/steve/wordpress/index.php?p=13)
 is based on a [LaTeX Rendering Class](http://www.mayer.dial.pipex.com/tex.htm) originally
-written by Benjamin Zeiss.  It's requirements are somewhat different and has a different 
+written by Benjamin Zeiss.  Its requirements are somewhat different and has a different 
 installation procedure.
 
+[MathJax-LaTeX](http://wordpress.org/plugins/mathjax-latex/)
+
+[Simple Mathjax](http://wordpress.org/plugins/simple-mathjax/)
+
 == Change Log ==
+
+= 1.9 =
+* Enhancement: Do not use deprecated WordPress functions.
+* Enhancement: Fix PHP Strict errors.
 
 = 1.8 =
 * Enhancement: Add pixel density support.
@@ -200,6 +213,9 @@ installation procedure.
 * No longer requires the FauxML plugin.
 
 == Upgrade Notice ==
+
+= 1.9 =
+Fixes PHP Warnings.
 
 = 1.8 =
 PHP 5.4 Compatibility, better sanitation, and more.
