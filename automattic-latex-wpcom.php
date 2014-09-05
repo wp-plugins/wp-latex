@@ -44,7 +44,16 @@ class Automattic_Latex_WPCOM {
 	function wrapper( $wrapper = false ) {}
 
 	function url() {
-		$this->url = 'http://s.wordpress.com/latex.php?latex=' . rawurlencode( $this->latex ) . "&bg=$this->bg_hex&fg=$this->fg_hex&s=$this->size";
+		$this->url = add_query_arg(
+			urlencode_deep( array(
+				'latex' => $this->latex,
+				'bg' => $this->bg_hex,
+				'fg' => $this->fg_hex,
+				's' => $this->size,
+			) ),
+			( is_ssl() ? 'https' : 'http' ) . '://s0.wp.com/latex.php'
+		);
+
 		return $this->url;
 	}
 }
