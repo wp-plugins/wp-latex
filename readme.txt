@@ -1,7 +1,7 @@
 === WP LaTeX ===
 Contributors: mdawaffe, sidney, automattic
 Tags: latex, math, equations, WordPress.com
-Stable tag: 1.8
+Stable tag: 1.9
 Requires at least: 3.2
 Tested up to: 4.0
 
