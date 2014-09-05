@@ -314,7 +314,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 			<th scope="row"><?php _e( 'LaTeX generation method', 'wp-latex' ); ?></th>
 			<td>
 				<ul id="wp-latex-method-switch">
-					<li><label for="wp-latex-method-wpcom"><input type="radio" name="wp_latex[method]" id="wp-latex-method-wpcom" value='Automattic_Latex_WPCOM'<?php checked( 'Automattic_Latex_WPCOM', $values['method'] ); ?> /> <?php printf( _c( '%s LaTeX server (recommended)|WordPress.com LaTeX Server (recommended)', 'wp-latex' ), '<a href="http://wordpress.com/" target="_blank">WordPress.com</a>' ); ?></label></li>
+					<li><label for="wp-latex-method-wpcom"><input type="radio" name="wp_latex[method]" id="wp-latex-method-wpcom" value='Automattic_Latex_WPCOM'<?php checked( 'Automattic_Latex_WPCOM', $values['method'] ); ?> /> <?php printf( _x( '%s LaTeX server (recommended)', 'WordPress.com LaTeX Server (recommended)', 'wp-latex' ), '<a href="http://wordpress.com/" target="_blank">WordPress.com</a>' ); ?></label></li>
 					<li><label for="wp-latex-method-dvipng"><input type="radio" name="wp_latex[method]" id="wp-latex-method-dvipng" value='Automattic_Latex_DVIPNG'<?php checked( 'Automattic_Latex_DVIPNG', $values['method'] ); ?> /> <?php _e( 'Local LaTeX installation using <code>dvipng</code>', 'wp-latex' ); ?></label></li>
 					<li><label for="wp-latex-method-dvips"><input type="radio" name="wp_latex[method]" id="wp-latex-method-dvips" value='Automattic_Latex_DVIPS'<?php checked( 'Automattic_Latex_DVIPS', $values['method'] ); ?> /> <?php _e( 'Local LaTeX installation using <code>dvips</code> and <code>convert</code>', 'wp-latex' ); ?></label></li>
 				</ul>
@@ -327,7 +327,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 				if ( !$this->options['latex_path'] ) {
 					$guess_latex_path = trim( @exec( 'which latex' ) );
 					if ( $guess_latex_path && file_exists( $guess_latex_path ) )
-						printf( ' ' . _c( 'Try: <code>%s</code>|Try: guess_latex_path', 'wp-latex' ), $guess_latex_path );
+						printf( ' ' . _x( 'Try: <code>%s</code>', 'Try: guess_latex_path', 'wp-latex' ), $guess_latex_path );
 					else
 						echo ' ' . __( 'Not found.  Enter full path to <code>latex</code> or choose another LaTeX generation method.', 'wp-latex' );
 				}
@@ -339,7 +339,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 				if ( !$this->options['dvipng_path'] ) {
 					$guess_dvipng_path = trim( @exec( 'which dvipng' ) );
 					if ( $guess_dvipng_path && file_exists( $guess_dvipng_path ) )
-						printf( ' ' . _c( 'Try: <code>%s</code>|Try: guess_dvipng_path', 'wp-latex' ), $guess_dvipng_path );
+						printf( ' ' . _x( 'Try: <code>%s</code>', 'Try: guess_dvipng_path', 'wp-latex' ), $guess_dvipng_path );
 					else
 						echo ' ' . __(  'Not found.  Enter full path to <code>dvipng</code> or choose another LaTeX generation method.', 'wp-latex' );
 				}
@@ -351,7 +351,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 				if ( !$this->options['dvips_path'] ) {
 					$guess_dvips_path = trim( @exec( 'which dvips' ) );
 					if ( $guess_dvips_path && file_exists( $guess_dvips_path ) )
-						printf( ' ' . _c( 'Try: <code>%s</code>|Try: guess_dvips_path', 'wp-latex' ), $guess_dvips_path );
+						printf( ' ' . _x( 'Try: <code>%s</code>', 'Try: guess_dvips_path', 'wp-latex' ), $guess_dvips_path );
 					elseif ( !$this->options['dvipng_path'] )
 						echo ' ' . __( 'Not found.  Enter full path to <code>dvips</code> or choose another LaTeX generation method.', 'wp-latex' );
 				}
@@ -363,7 +363,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 				if ( !$this->options['convert_path'] ) {
 					$guess_convert_path = trim( @exec( 'which convert' ) );
 					if ( $guess_convert_path && file_exists( $guess_convert_path ) )
-						printf( ' ' . _c( 'Try: <code>%s</code>|Try: guess_convert_path', 'wp-latex' ), $guess_convert_path );
+						printf( ' ' . _x( 'Try: <code>%s</code>', 'Try: guess_convert_path', 'wp-latex' ), $guess_convert_path );
 					elseif ( !$this->options['dvipng_path'] )
 						echo ' ' . __( 'Not found.  Enter full path to <code>convert</code> or choose another LaTeX generation method.', 'wp-latex' );
 				}
