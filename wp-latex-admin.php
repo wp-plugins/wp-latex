@@ -394,14 +394,14 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		<tr>
 			<th scope="row"><label for="wp-latex-css"><?php _e( 'Custom CSS to use with the LaTeX images', 'wp-latex' ); ?></label></th>
 			<td>
-				<textarea name='wp_latex[css]' id='wp-latex-css' rows="8" cols="50"><?php echo wp_specialchars( $values['css'] ); ?></textarea>
+				<textarea name='wp_latex[css]' id='wp-latex-css' rows="8" cols="50"><?php echo esc_textarea( $values['css'] ); ?></textarea>
 			</td>
 		</tr>
 
 		<tr class="wp-latex-method wp-latex-method-dvipng wp-latex-method-dvips<?php if ( in_array( 'wrapper', $errors ) ) echo ' form-invalid	'; ?>">
 			<th scope="row"><label for="wp-latex-wrapper"><?php _e( 'LaTeX Preamble', 'wp-latex' ); ?></label></th>
 			<td>
-				<textarea name='wp_latex[wrapper]' rows='8' cols="50" id='wp-latex-wrapper'><?php echo wp_specialchars( $values['wrapper'] ); ?></textarea>
+				<textarea name='wp_latex[wrapper]' rows='8' cols="50" id='wp-latex-wrapper'><?php echo esc_textarea( $values['wrapper'] ); ?></textarea>
 			</td>
 		</tr>
 	<?php foreach ( $default_wrappers as $method => $default_wrapper ) : ?>
