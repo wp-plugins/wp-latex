@@ -190,7 +190,7 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 				exec( $exec, $out, $r );
 				$message .= "<h4>Command run:</h4>\n";
 				$message .= "<div class='pre'><code>$exec</code></div>\n";
-				$out = preg_replace( '/tex_.+?\.log/i', '<strong><a href="' . clean_url( content_url( 'latex/test.log' ) ) . '">test.log</a></strong>', join("\n", $out));
+				$out = preg_replace( '/tex_.+?\.log/i', '<strong><a href="' . esc_url( content_url( 'latex/test.log' ) ) . '">test.log</a></strong>', join("\n", $out));
 				$message .= "<h4>Result:</h4>\n";
 				$message .= "<div class='pre'><code>$out</code></div>\n";
 				$message .= "<p>Exit code: $r</p>\n";
@@ -206,7 +206,7 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 			}
 			@unlink( WP_CONTENT_DIR . '/latex/test.log' );
 			$alt = esc_attr( __( 'Test Image', 'wp-latex' ) );
-			echo "<img class='test-image' src='" . clean_url( $url ) . "' alt='$alt' />\n";
+			echo "<img class='test-image' src='" . esc_url( $url ) . "' alt='$alt' />\n";
 			echo "<p class='test-image'>" . __( 'If you can see a big integral, all is well.', 'wp-latex' ) . '</p>';
 			$r = true;
 		}
@@ -294,7 +294,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 	
 	<?php if ( empty( $errors ) ) $this->test_image(); ?>
 	
-	<form action="<?php echo clean_url( remove_query_arg( 'updated' ) ); ?>" method="post">
+	<form action="<?php echo esc_url( remove_query_arg( 'updated' ) ); ?>" method="post">
 
 	<table class="form-table">
 	<tbody>
