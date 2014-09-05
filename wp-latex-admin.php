@@ -205,7 +205,7 @@ class WP_LaTeX_Admin extends WP_LaTeX {
 				$url = content_url( 'latex/test.png' ) . "?" . mt_rand();
 			}
 			@unlink( WP_CONTENT_DIR . '/latex/test.log' );
-			$alt = attribute_escape( __( 'Test Image', 'wp-latex' ) );
+			$alt = esc_attr( __( 'Test Image', 'wp-latex' ) );
 			echo "<img class='test-image' src='" . clean_url( $url ) . "' alt='$alt' />\n";
 			echo "<p class='test-image'>" . __( 'If you can see a big integral, all is well.', 'wp-latex' ) . '</p>';
 			$r = true;
@@ -323,7 +323,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 
 		<tr class="wp-latex-method wp-latex-method-dvipng wp-latex-method-dvips<?php if ( in_array( 'latex_path', $errors ) ) echo ' form-invalid'; ?>">
 			<th scope="row"><label for="wp-latex-latex-path"><?php _e( '<code>latex</code> path' ); ?></label></th>
-			<td><input type='text' name='wp_latex[latex_path]' value='<?php echo attribute_escape( $values['latex_path'] ); ?>' id='wp-latex-latex-path' /><?php
+			<td><input type='text' name='wp_latex[latex_path]' value='<?php echo esc_attr( $values['latex_path'] ); ?>' id='wp-latex-latex-path' /><?php
 				if ( !$this->options['latex_path'] ) {
 					$guess_latex_path = trim( @exec( 'which latex' ) );
 					if ( $guess_latex_path && file_exists( $guess_latex_path ) )
@@ -335,7 +335,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		</tr>
 		<tr class="wp-latex-method wp-latex-method-dvipng<?php if ( in_array( 'dvipng_path', $errors ) ) echo ' form-invalid'; ?>">
 			<th scope="row"><label for="wp-latex-dvipng-path"><?php _e( '<code>dvipng</code> path' ); ?></label></th>
-			<td><input type='text' name='wp_latex[dvipng_path]' value='<?php echo attribute_escape( $values['dvipng_path'] ); ?>' id='wp-latex-dvipng-path' /><?php
+			<td><input type='text' name='wp_latex[dvipng_path]' value='<?php echo esc_attr( $values['dvipng_path'] ); ?>' id='wp-latex-dvipng-path' /><?php
 				if ( !$this->options['dvipng_path'] ) {
 					$guess_dvipng_path = trim( @exec( 'which dvipng' ) );
 					if ( $guess_dvipng_path && file_exists( $guess_dvipng_path ) )
@@ -347,7 +347,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		</tr>
 		<tr class="wp-latex-method wp-latex-method-dvips<?php if ( in_array( 'dvips_path', $errors ) ) echo ' form-invalid'; ?>">
 			<th scope="row"><label for="wp-latex-dvips-path"><?php _e( '<code>dvips</code> path' ); ?></label></th>
-			<td><input type='text' name='wp_latex[dvips_path]' value='<?php echo attribute_escape( $values['dvips_path'] ); ?>' id='wp-latex-dvips-path' /><?php
+			<td><input type='text' name='wp_latex[dvips_path]' value='<?php echo esc_attr( $values['dvips_path'] ); ?>' id='wp-latex-dvips-path' /><?php
 				if ( !$this->options['dvips_path'] ) {
 					$guess_dvips_path = trim( @exec( 'which dvips' ) );
 					if ( $guess_dvips_path && file_exists( $guess_dvips_path ) )
@@ -359,7 +359,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		</tr>
 		<tr class="wp-latex-method wp-latex-method-dvips<?php if ( in_array( 'convert_path', $errors ) ) echo ' form-invalid'; ?>">
 			<th scope="row"><label for="wp-latex-convert-path"><?php _e( '<code>convert</code> path', 'wp-latex' ); ?></label></th>
-			<td><input type='text' name='wp_latex[convert_path]' value='<?php echo attribute_escape( $values['convert_path'] ); ?>' id='wp-latex-convert-path' /><?php
+			<td><input type='text' name='wp_latex[convert_path]' value='<?php echo esc_attr( $values['convert_path'] ); ?>' id='wp-latex-convert-path' /><?php
 				if ( !$this->options['convert_path'] ) {
 					$guess_convert_path = trim( @exec( 'which convert' ) );
 					if ( $guess_convert_path && file_exists( $guess_convert_path ) )
@@ -373,14 +373,14 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 		<tr<?php if ( in_array( 'fg', $errors ) ) echo ' class="form-invalid"'; ?>>
 			<th scope="row"><label for="wp-latex-fg"><?php _e( 'Default text color', 'wp-latex' ); ?></label></th>
 			<td>
-				<input type='text' name='wp_latex[fg]' value='<?php echo attribute_escape( $values['fg'] ); ?>' id='wp-latex-fg' />
+				<input type='text' name='wp_latex[fg]' value='<?php echo esc_attr( $values['fg'] ); ?>' id='wp-latex-fg' />
 				<?php _e( 'A six digit hexadecimal number like <code>000000</code> or <code>ffffff</code>' ); ?>
 			</td>
 		</tr>
 		<tr<?php if ( in_array( 'bg', $errors ) ) echo ' class="form-invalid"'; ?>>
 			<th scope="row"><label for="wp-latex-bg"><?php _e( 'Default background color', 'wp-latex' ); ?></label></th>
 			<td>
-				<input type='text' name='wp_latex[bg]' value='<?php echo attribute_escape( $values['bg'] ); ?>' id='wp-latex-bg' />
+				<input type='text' name='wp_latex[bg]' value='<?php echo esc_attr( $values['bg'] ); ?>' id='wp-latex-bg' />
 				<?php _e( 'A six digit hexadecimal number like <code>000000</code> or <code>ffffff</code>, or <code>transparent</code>' ); ?>
 			</td>
 		</tr>
@@ -418,7 +418,7 @@ tr.wp-latex-method-<?php echo $current_method; ?> {
 	
 	
 	<p class="submit">
-		<input type="submit" class="button-primary" value="<?php echo attribute_escape( __( 'Update LaTeX Options', 'wp-latex' ) ); ?>" />
+		<input type="submit" class="button-primary" value="<?php echo esc_attr( __( 'Update LaTeX Options', 'wp-latex' ) ); ?>" />
 		<?php wp_nonce_field( 'wp-latex' ); ?>
 	</p>
 	</form>

@@ -2,7 +2,7 @@
 Contributors: mdawaffe, sidney, automattic
 Tags: latex, math, equations, WordPress.com
 Stable tag: 1.8
-Requires at least: 2.7
+Requires at least: 2.8
 Tested up to: 3.2
 
 WP LaTeX creates PNG images from inline $\LaTeX$ code in your posts and comments.
